@@ -1,6 +1,10 @@
 LightMP3 Changelog
 ------------------
 
+Version 2.0.0 RC6
+-----------------
+-Added: Support for 6.20/6.35/6.39/6.60/6.61
+
 Version 2.0.0 RC5
 -----------------
 -Added: Support for AAC

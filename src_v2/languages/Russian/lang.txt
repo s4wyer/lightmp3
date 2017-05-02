@@ -1,6 +1,10 @@
 #Language   : Russian
-#By         : coach777
+#By         : ErikPshat
+#Contacts   : erikpshat@gmail.com
+
+#Encoding is one of: UTF-8, GBK, BIG5, SHIFT-JIS, EUC-KR, MS-EE, MS-CYRL, ISO-8859-1, ISO-8859-2
 ENCODING=UTF-8
+TAG_ENCODING=UTF-8
 
 #Language to use in the On Screen Keyboard.
 #			JAPANESE			0
@@ -17,182 +21,183 @@ ENCODING=UTF-8
 #			CHINESE_SIMPLIFIED	11
 OSK_LANGUAGE=8
 
-YES=ƒа
-NO=Ќет
-WAIT=ѕќ∆јЋ”…—“ј ѕќƒќ∆ƒ»“≈...
-CHECK_BRIGHTNESS_TITLE= ќЌ“–ќЋ№ я– ќ—“»
-CHECK_BRIGHTNESS=ѕќЌ»«»“№ я– ќ—“№?
-BRIGHTNESS_NO=Ќет
-BRIGHTNESS_YES_WARNING=ƒа (с запросом)
-BRIGHTNESS_YES=ƒа (без запроса)
-FREE_MEMORY=—вободна€ пам€ть:
+YES=–Ф–∞
+NO=–Э–µ—В
+WAIT=–Я–Ю–Ц–Р–Ы–£–Щ–°–Ґ–Р –Я–Ю–Ф–Ю–Ц–Ф–Ш–Ґ–Х...
+CHECK_BRIGHTNESS_TITLE=–Ъ–Ю–Э–Ґ–†–Ю–Ы–ђ –ѓ–†–Ъ–Ю–°–Ґ–Ш
+CHECK_BRIGHTNESS=–Я–Ю–Э–Ш–Ч–Ш–Ґ–ђ –ѓ–†–Ъ–Ю–°–Ґ–ђ?
+BRIGHTNESS_NO=–Э–µ—В
+BRIGHTNESS_YES_WARNING=–Ф–∞ (—Б –Ј–∞–њ—А–Њ—Б–Њ–Љ)
+BRIGHTNESS_YES=–Ф–∞ (–±–µ–Ј –Ј–∞–њ—А–Њ—Б–∞)
+FREE_MEMORY=–°–≤–Њ–±–Њ–і–љ–∞—П –њ–∞–Љ—П—В—М:
 
-USB_ACTIVE=ј “»¬ј÷»я USB
-USB_MESSAGE=SELECT дл€ деактивации USB.
-TITLE= омпозици€
-ARTIST=»сполнитель
-ALBUM=јльбом
-GENRE=∆анр
-YEAR=√од
-TIME=¬рем€
-TRACK=“рек
-ADDING_PLAYLIST=ƒќЅј¬Ћ≈Ќ»≈ “–≈ ј ¬ ѕЋ≈…Ћ»—“
-RATING=–ейтинг
-PLAYED=ѕроигрывалс€
-NOT_SUPPORTED=Ќе поддерживаетс€
+USB_ACTIVE=–Р–Ъ–Ґ–Ш–Т–Р–¶–Ш–ѓ USB
+USB_MESSAGE=SELECT –і–ї—П –і–µ–∞–Ї—В–Є–≤–∞—Ж–Є–Є USB.
+TITLE=–Ъ–Њ–Љ–њ–Њ–Ј–Є—Ж–Є—П
+ARTIST=–Ш—Б–њ–Њ–ї–љ–Є—В–µ–ї—М
+ALBUM=–Р–ї—М–±–Њ–Љ
+GENRE=–Ц–∞–љ—А
+YEAR=–У–Њ–і
+TIME=–Т—А–µ–Љ—П
+TRACK=–Ґ—А–µ–Ї
+ADDING_PLAYLIST=–Ф–Ю–С–Р–Т–Ы–Х–Э–Ш–Х –Ґ–†–Х–Ъ–Р –Т –Я–Ы–Х–Щ–Ы–Ш–°–Ґ
+RATING=–†–µ–є—В–Є–љ–≥
+PLAYED=–Я—А–Њ–Є–≥—А—Л–≤–∞–ї—Б—П
+NOT_SUPPORTED=–Э–µ –њ–Њ–і–і–µ—А–ґ–Є–≤–∞–µ—В—Б—П
 
-MODE=–ежим
-BITRATE= ачество
-SAMPLERATE=„астота
-LAYER=”ровень
-FILE_FORMAT=‘ормат
-EMPHASIS=Ёмфаза
-SLEEP_MODE=—п€щий режим
-PLAY_MODE=¬оспроизведение
-STATUS=—татус
-VOLUME_BOOST=”силение звука
-EQUALIZER=Ёквалайзер
-NOCOVER=Ќет обложки
+MODE=–†–µ–ґ–Є–Љ
+BITRATE=–Ъ–∞—З–µ—Б—В–≤–Њ
+SAMPLERATE=–І–∞—Б—В–Њ—В–∞
+LAYER=–£—А–Њ–≤–µ–љ—М
+FILE_FORMAT=–§–Њ—А–Љ–∞—В
+EMPHASIS=–≠–Љ—Д–∞–Ј–∞
+SLEEP_MODE=–°–њ—П—Й–Є–є —А–µ–ґ–Є–Љ
+PLAY_MODE=–Т–Њ—Б–њ—А–Њ–Є–Ј–≤–µ–і–µ–љ–Є–µ
+STATUS=–°—В–∞—В—Г—Б
+VOLUME_BOOST=–£—Б–Є–ї–µ–љ–Є–µ –Ј–≤—Г–Ї–∞
+EQUALIZER=–≠–Ї–≤–∞–ї–∞–є–Ј–µ—А
+NOCOVER=–Э–µ—В –Њ–±–ї–Њ–ґ–Ї–Є
 
-BUTTON_1=—писок файлов
-BUTTON_2=ѕлейлист
-BUTTON_3=–едактор плейлиста
-BUTTON_4=ћедиа библиотека
-BUTTON_5=Ќастройки
+BUTTON_1=–°–њ–Є—Б–Њ–Ї —Д–∞–є–ї–Њ–≤
+BUTTON_2=–Я–ї–µ–є–ї–Є—Б—В
+BUTTON_3=–†–µ–і–∞–Ї—В–Њ—А –њ–ї–µ–є–ї–Є—Б—В–∞
+BUTTON_4=–Ь–µ–і–Є–∞ –±–Є–±–ї–Є–Њ—В–µ–Ї–∞
+BUTTON_5=–Э–∞—Б—В—А–Њ–є–Ї–Є
 
-SLEEP_MODE_0=¬ыкл.
-SLEEP_MODE_1=ѕо окончании трека
-SLEEP_MODE_2=ѕо окончании директории
+SLEEP_MODE_0=–Т—Л–Ї–ї.
+SLEEP_MODE_1=–Я–Њ –Њ–Ї–Њ–љ—З–∞–љ–Є–Є —В—А–µ–Ї–∞
+SLEEP_MODE_2=–Я–Њ –Њ–Ї–Њ–љ—З–∞–љ–Є–Є –і–Є—А–µ–Ї—В–Њ—А–Є–Є
 
-PLAY_MODE_0=Ќорма
-PLAY_MODE_1=ѕовтор всех
-PLAY_MODE_2=ѕовтор трека
-PLAY_MODE_3=¬ случайном пор€дке
-PLAY_MODE_4=¬ сл.пор€дке / повтор
+PLAY_MODE_0=–Э–Њ—А–Љ–∞
+PLAY_MODE_1=–Я–Њ–≤—В–Њ—А –≤—Б–µ—Е
+PLAY_MODE_2=–Я–Њ–≤—В–Њ—А —В—А–µ–Ї–∞
+PLAY_MODE_3=–Т —Б–ї—Г—З–∞–є–љ–Њ–Љ –њ–Њ—А—П–і–Ї–µ
+PLAY_MODE_4=–Т —Б–ї.–њ–Њ—А—П–і–Ї–µ / –њ–Њ–≤—В–Њ—А
 
-PLAYER_STATUS_0=ќткрытие файла
-PLAYER_STATUS_1=ѕауза
-PLAYER_STATUS_2=¬оспроизведение
+PLAYER_STATUS_0=–Ю—В–Ї—А—Л—В–Є–µ —Д–∞–є–ї–∞
+PLAYER_STATUS_1=–Я–∞—Г–Ј–∞
+PLAYER_STATUS_2=–Т–Њ—Б–њ—А–Њ–Є–Ј–≤–µ–і–µ–љ–Є–µ
 
-CONFIRM_MESSAGE=X дл€ подтверждени€, O дл€ отмены
-CONFIRM_LOAD_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_LOAD=«ј√–”«»“№ Ё“ќ“ ѕЋ≈…Ћ»—“?
+CONFIRM_MESSAGE=X –і–ї—П –њ–Њ–і—В–≤–µ—А–ґ–і–µ–љ–Є—П, O –і–ї—П –Њ—В–Љ–µ–љ—Л
+CONFIRM_LOAD_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_LOAD=–Ч–Р–У–†–£–Ч–Ш–Ґ–ђ –≠–Ґ–Ю–Ґ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ?
 
-CONFIRM_REMOVE_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_REMOVE=”ƒјЋ»“№ Ё“ќ“ ѕЋ≈…Ћ»—“?
-ASK_PLAYLIST_NAME=¬¬≈ƒ»“≈ »ћя ѕЋ≈…Ћ»—“ј
+CONFIRM_REMOVE_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_REMOVE=–£–Ф–Р–Ы–Ш–Ґ–ђ –≠–Ґ–Ю–Ґ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ?
+ASK_PLAYLIST_NAME=–Т–Т–Х–Ф–Ш–Ґ–Х –Ш–Ь–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
 
-CONFIRM_CLEAR_PLAYLIST_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_CLEAR_PLAYLIST=ќ„»—“»“№ Ё“ќ“ ѕЋ≈…Ћ»—“?
-CONFIRM_REMOVE_FROM_PLAYLIST_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_REMOVE_FROM_PLAYLIST=”ƒјЋ»“№ ¬џЅ–јЌЌџ… “–≈  »« ѕЋ≈…Ћ»—“ј?
-PLAYLIST_NAME=Ќаименование
-TOTAL_TRACKS=¬сего треков
+CONFIRM_CLEAR_PLAYLIST_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_CLEAR_PLAYLIST=–Ю–І–Ш–°–Ґ–Ш–Ґ–ђ –≠–Ґ–Ю–Ґ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ?
+CONFIRM_REMOVE_FROM_PLAYLIST_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_REMOVE_FROM_PLAYLIST=–£–Ф–Р–Ы–Ш–Ґ–ђ –Т–Ђ–С–†–Р–Э–Э–Ђ–Щ –Ґ–†–Х–Ъ –Ш–Ч –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р?
+PLAYLIST_NAME=–Э–∞–Є–Љ–µ–љ–Њ–≤–∞–љ–Є–µ
+TOTAL_TRACKS=–Т—Б–µ–≥–Њ —В—А–µ–Ї–Њ–≤
 
-SETTINGS_01=“≈ћј
-SETTINGS_02=я«џ 
-SETTINGS_03=¬≈—“» ‘ј…Ћ ћ”«џ јЋ№Ќџ’ ѕ–≈ƒѕќ„“≈Ќ»…
-SETTINGS_04=«ј“”’јЌ»≈ «¬” ј ѕ–» ѕ–ќѕ”— ≈ “–≈ ј
-SETTINGS_05=ѕ–»√Ћ”Ў≈ЌЌџ… «¬” 
-SETTINGS_06= ќЌ“–ќЋ№ я– ќ—“»
-SETTINGS_07=–≈∆»ћ ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я (MEDIA ENGINE)
-SETTINGS_08=–≈∆»ћ ”—»Ћ≈Ќ»я «¬” ј (LIBMAD)
-SETTINGS_09=ј¬“ќћј“»„≈— јя „ј—“ќ“ј ѕ–ќ÷≈——ќ–ј
-SETTINGS_10=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: GUI
-SETTINGS_11=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: MP3 LIBMAD
-SETTINGS_12=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: MP3 MEDIA ENGINE
-SETTINGS_13=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: OGG VORBIS
-SETTINGS_14=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: FLAC
-SETTINGS_15=„ј—“ќ“ј ѕ–ќ÷≈——ќ–ј: ATRAC3
-CONFIRM_SAVE_SETTINGS_TITLE= ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_SAVE_SETTINGS=—ќ’–јЌ»“№ Ќј—“–ќ… »?
+SETTINGS_01=–Ґ–Х–Ь–Р
+SETTINGS_02=–ѓ–Ч–Ђ–Ъ
+SETTINGS_03=–Т–Х–°–Ґ–Ш –§–Р–Щ–Ы –Ь–£–Ч–Ђ–Ъ–Р–Ы–ђ–Э–Ђ–• –Я–†–Х–Ф–Я–Ю–І–Ґ–Х–Э–Ш–Щ
+SETTINGS_04=–Ч–Р–Ґ–£–•–Р–Э–Ш–Х –Ч–Т–£–Ъ–Р –Я–†–Ш –Я–†–Ю–Я–£–°–Ъ–Х –Ґ–†–Х–Ъ–Р
+SETTINGS_05=–Я–†–Ш–У–Ы–£–®–Х–Э–Э–Ђ–Щ –Ч–Т–£–Ъ
+SETTINGS_06=–Ъ–Ю–Э–Ґ–†–Ю–Ы–ђ –ѓ–†–Ъ–Ю–°–Ґ–Ш
+SETTINGS_07=–†–Х–Ц–Ш–Ь –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ (MEDIA ENGINE)
+SETTINGS_08=–†–Х–Ц–Ш–Ь –£–°–Ш–Ы–Х–Э–Ш–ѓ –Ч–Т–£–Ъ–Р (LIBMAD)
+SETTINGS_09=–Р–Т–Ґ–Ю–Ь–Р–Ґ–Ш–І–Х–°–Ъ–Р–ѓ –І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р
+SETTINGS_10=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: GUI
+SETTINGS_11=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: MP3 LIBMAD
+SETTINGS_12=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: MP3 MEDIA ENGINE
+SETTINGS_13=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: OGG VORBIS
+SETTINGS_14=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: FLAC
+SETTINGS_15=–І–Р–°–Ґ–Ю–Ґ–Р –Я–†–Ю–¶–Х–°–°–Ю–†–Р: ATRAC3
+CONFIRM_SAVE_SETTINGS_TITLE= –Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_SAVE_SETTINGS=–°–Ю–•–†–Р–Э–Ш–Ґ–ђ –Э–Р–°–Ґ–†–Ю–Щ–Ъ–Ш?
 
-HELP_PLAYER_TITLE=ѕќћќў№
-HELP_PLAYER_01=R - дл€ следующего трека
-HELP_PLAYER_02=L - дл€ предыдущего трека
-HELP_PLAYER_03=X - дл€ паузы/воспроизведени€
-HELP_PLAYER_04=O - дл€ остановки
-HELP_PLAYER_05=квадрат - дл€ приглушени€ звука вкл/откл
-HELP_PLAYER_06=треугольник - дл€ смены сп€щего режима
-HELP_PLAYER_07=SELECT - дл€ смены режима воспроизведени€
-HELP_PLAYER_08=START - дл€ активации экономичного режима
-HELP_PLAYER_09=X + вверх/вниз - дл€ оценки трека
+HELP_PLAYER_TITLE=–Я–Ю–Ь–Ю–©–ђ
+HELP_PLAYER_01=R - –і–ї—П —Б–ї–µ–і—Г—О—Й–µ–≥–Њ —В—А–µ–Ї–∞
+HELP_PLAYER_02=L - –і–ї—П –њ—А–µ–і—Л–і—Г—Й–µ–≥–Њ —В—А–µ–Ї–∞
+HELP_PLAYER_03=X - –і–ї—П –њ–∞—Г–Ј—Л/–≤–Њ—Б–њ—А–Њ–Є–Ј–≤–µ–і–µ–љ–Є—П
+HELP_PLAYER_04=O - –і–ї—П –Њ—Б—В–∞–љ–Њ–≤–Ї–Є
+HELP_PLAYER_05=–Ї–≤–∞–і—А–∞—В - –і–ї—П –њ—А–Є–≥–ї—Г—И–µ–љ–Є—П –Ј–≤—Г–Ї–∞ –≤–Ї–ї/–Њ—В–Ї–ї
+HELP_PLAYER_06=—В—А–µ—Г–≥–Њ–ї—М–љ–Є–Ї - –і–ї—П —Б–Љ–µ–љ—Л —Б–њ—П—Й–µ–≥–Њ —А–µ–ґ–Є–Љ–∞
+HELP_PLAYER_07=SELECT - –і–ї—П —Б–Љ–µ–љ—Л —А–µ–ґ–Є–Љ–∞ –≤–Њ—Б–њ—А–Њ–Є–Ј–≤–µ–і–µ–љ–Є—П
+HELP_PLAYER_08=START - –і–ї—П –∞–Ї—В–Є–≤–∞—Ж–Є–Є —Н–Ї–Њ–љ–Њ–Љ–Є—З–љ–Њ–≥–Њ —А–µ–ґ–Є–Љ–∞
+HELP_PLAYER_09=X + –≤–≤–µ—А—Е/–≤–љ–Є–Ј - –і–ї—П –Њ—Ж–µ–љ–Ї–Є —В—А–µ–Ї–∞
 
-BROWSE_ARTIST=ѕќ»—  ѕќ »—ѕќЋЌ»“≈Ћё
-BROWSE_ALBUM=ѕќ»—  ѕќ јЋ№Ѕќћ”
-BROWSE_GENRE=ѕќ»—  ѕќ ∆јЌ–”
-BROWSE_RATING=ѕќ»—  ѕќ –≈…“»Ќ√”
-SEARCH=ѕќ»—  ѕќ Ќј»ћ≈Ќќ¬јЌ»ё
-SCAN_MS=ѕќ»—  ћ≈ƒ»ј‘ј…Ћќ¬ Ќј  ј–“≈
+BROWSE_ARTIST=–Я–Ю–Ш–°–Ъ –Я–Ю –Ш–°–Я–Ю–Ы–Э–Ш–Ґ–Х–Ы–Ѓ
+BROWSE_ALBUM=–Я–Ю–Ш–°–Ъ –Я–Ю –Р–Ы–ђ–С–Ю–Ь–£
+BROWSE_GENRE=–Я–Ю–Ш–°–Ъ –Я–Ю –Ц–Р–Э–†–£
+BROWSE_RATING=–Я–Ю–Ш–°–Ъ –Я–Ю –†–Х–Щ–Ґ–Ш–Э–У–£
+SEARCH=–Я–Ю–Ш–°–Ъ –Я–Ю –Э–Р–Ш–Ь–Х–Э–Ю–Т–Р–Э–Ш–Ѓ
+SCAN_MS=–Я–Ю–Ш–°–Ъ –Ь–Х–Ф–Ш–Р–§–Р–Щ–Ы–Ю–Т –Э–Р –Ъ–Р–†–Ґ–Х
 
-CONFIRM_SCAN_MS_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_SCAN_MS=— јЌ»–ќ¬ј“№  ј–“” Ќј ћ≈ƒ»ј‘ј…Ћџ?
-CHECKING_FILE=ѕ–ќ¬≈– ј ‘ј…Ћќ¬ Ќј  ј–“≈ ѕјћя“»
-SCANNING=»ƒ≈“ ѕќ»—  ћ≈ƒ»ј‘ј…Ћќ¬
-MESSAGEBOX_CONTINUE=Ќј∆ћ»“≈ X ƒЋя ѕ–ќƒќЋ∆≈Ќ»я
-SCAN_FINISHED=— јЌ»–ќ¬јЌ»≈ «ј¬≈–Ў≈Ќќ
-MEDIA_FOUND=Ќј…ƒ≈Ќќ XX ћ≈ƒ»ј‘ј…Ћќ¬
-ASK_SEARCH_STRING=¬¬≈ƒ»“≈ —“–ќ ” ѕќ»— ј
-QUERY_RUNNING_TITLE=ѕќ∆јЋ”…—“ј ѕќƒќ∆ƒ»“≈
-QUERY_RUNNING=¬џѕќЋЌя≈“—я «јѕ–ќ—
-TOTAL_TIME=ќбщее врем€
-WORKING=¬џѕќЋЌя≈“—я...
+CONFIRM_SCAN_MS_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_SCAN_MS=–°–Ъ–Р–Э–Ш–†–Ю–Т–Р–Ґ–ђ –Ъ–Р–†–Ґ–£ –Э–Р –Ь–Х–Ф–Ш–Р–§–Р–Щ–Ы–Ђ?
+CHECKING_FILE=–Я–†–Ю–Т–Х–†–Ъ–Р –§–Р–Щ–Ы–Ю–Т –Э–Р –Ъ–Р–†–Ґ–Х –Я–Р–Ь–ѓ–Ґ–Ш
+SCANNING=–Ш–Ф–Х–Ґ –Я–Ю–Ш–°–Ъ –Ь–Х–Ф–Ш–Р–§–Р–Щ–Ы–Ю–Т
+MESSAGEBOX_CONTINUE=–Э–Р–Ц–Ь–Ш–Ґ–Х X –Ф–Ы–ѓ –Я–†–Ю–Ф–Ю–Ы–Ц–Х–Э–Ш–ѓ
+SCAN_FINISHED=–°–Ъ–Р–Э–Ш–†–Ю–Т–Р–Э–Ш–Х –Ч–Р–Т–Х–†–®–Х–Э–Ю
+MEDIA_FOUND=–Э–Р–Щ–Ф–Х–Э–Ю XX –Ь–Х–Ф–Ш–Р–§–Р–Щ–Ы–Ю–Т
+ASK_SEARCH_STRING=–Т–Т–Х–Ф–Ш–Ґ–Х –°–Ґ–†–Ю–Ъ–£ –Я–Ю–Ш–°–Ъ–Р
+QUERY_RUNNING_TITLE=–Я–Ю–Ц–Р–Ы–£–Щ–°–Ґ–Р –Я–Ю–Ф–Ю–Ц–Ф–Ш–Ґ–Х
+QUERY_RUNNING=–Т–Ђ–Я–Ю–Ы–Э–ѓ–Х–Ґ–°–ѓ –Ч–Р–Я–†–Ю–°
+TOTAL_TIME=–Ю–±—Й–µ–µ –≤—А–µ–Љ—П
+WORKING=–Т–Ђ–Я–Ю–Ы–Э–ѓ–Х–Ґ–°–ѓ...
 
 #THIS IS USED FOR THE MESSAGE "XX% DONE"
-DONE=
+DONE=–У–Њ—В–Њ–≤–Њ
 
+################################################################################
 #2.0.0 BETA2
-ALL=¬—≈
-BOOST_NEW=Ќовый
-BOOST_OLD=—тарый
+################################################################################
+ALL=–Т–°–Х
+BOOST_NEW=–Э–Њ–≤—Л–є
+BOOST_OLD=–°—В–∞—А—Л–є
 
-HELP_FILE_BROWSER_TITLE=—ѕ»—ќ  ‘ј…Ћќ¬ (ѕќћќў№)
-HELP_FILE_BROWSER_01=X - ƒЋя ќ“–џ“»я ƒ»–≈ “ќ–»» / ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я ‘ј…Ћј
-HELP_FILE_BROWSER_02=O - ƒЋя ѕ≈–≈ћ≈ў≈Ќ»я Ќј ”–ќ¬≈Ќ№ ¬џЎ≈
-HELP_FILE_BROWSER_03= ¬јƒ–ј“ - ƒЋя ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я ƒ»–≈ “ќ–»»
-HELP_FILE_BROWSER_04=START - ƒЋя ƒќЅј¬Ћ≈Ќ»я ƒ»–≈ “ќ–»» /‘ј…Ћј ¬ ѕЋ≈…Ћ»—“
-HELP_FILE_BROWSER_05=SELECT - ƒЋя ј “»¬ј÷»» –≈∆»ћј USB
+HELP_FILE_BROWSER_TITLE=–°–Я–Ш–°–Ю–Ъ –§–Р–Щ–Ы–Ю–Т (–Я–Ю–Ь–Ю–©–ђ)
+HELP_FILE_BROWSER_01=X - –Ф–Ы–ѓ –Ю–Ґ–†–Ђ–Ґ–Ш–ѓ –Ф–Ш–†–Х–Ъ–Ґ–Ю–†–Ш–Ш / –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ –§–Р–Щ–Ы–Р
+HELP_FILE_BROWSER_02=O - –Ф–Ы–ѓ –Я–Х–†–Х–Ь–Х–©–Х–Э–Ш–ѓ –Э–Р –£–†–Ю–Т–Х–Э–ђ –Т–Ђ–®–Х
+HELP_FILE_BROWSER_03=–Ъ–Т–Р–Ф–†–Р–Ґ - –Ф–Ы–ѓ –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ –Ф–Ш–†–Х–Ъ–Ґ–Ю–†–Ш–Ш
+HELP_FILE_BROWSER_04=START - –Ф–Ы–ѓ –Ф–Ю–С–Р–Т–Ы–Х–Э–Ш–ѓ –Ф–Ш–†–Х–Ъ–Ґ–Ю–†–Ш–Ш /–§–Р–Щ–Ы–Р –Т –Я–Ы–Х–Щ–Ы–Ш–°–Ґ
+HELP_FILE_BROWSER_05=SELECT - –Ф–Ы–ѓ –Р–Ъ–Ґ–Ш–Т–Р–¶–Ш–Ш –†–Х–Ц–Ш–Ь–Р USB
 
-HELP_PLAYLIST_BROWSER_TITLE=ѕЋ≈…Ћ»—“ (ѕќћќў№)
-HELP_PLAYLIST_BROWSER_01=X - ƒЋя ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я ѕЋ≈…Ћ»—“ј
-HELP_PLAYLIST_BROWSER_02=O - ƒЋя ”ƒјЋ≈Ќ»я ѕЋ≈…Ћ»—“ј
-HELP_PLAYLIST_BROWSER_03= ¬јƒ–ј“ - ƒЋя «ј√–”« » ѕЋ≈…Ћ»—“ј ¬ –≈ƒј “ќ–
-HELP_PLAYLIST_BROWSER_04=START - ƒЋя ƒќЅј¬Ћ≈Ќ»я ѕЋ≈…Ћ»—“ј ¬ –≈ƒј “ќ–
+HELP_PLAYLIST_BROWSER_TITLE=–Я–Ы–Х–Щ–Ы–Ш–°–Ґ (–Я–Ю–Ь–Ю–©–ђ)
+HELP_PLAYLIST_BROWSER_01=X - –Ф–Ы–ѓ –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
+HELP_PLAYLIST_BROWSER_02=O - –Ф–Ы–ѓ –£–Ф–Р–Ы–Х–Э–Ш–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
+HELP_PLAYLIST_BROWSER_03=–Ъ–Т–Р–Ф–†–Р–Ґ - –Ф–Ы–ѓ –Ч–Р–У–†–£–Ч–Ъ–Ш –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р –Т –†–Х–Ф–Р–Ъ–Ґ–Ю–†
+HELP_PLAYLIST_BROWSER_04=START - –Ф–Ы–ѓ –Ф–Ю–С–Р–Т–Ы–Х–Э–Ш–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р –Т –†–Х–Ф–Р–Ъ–Ґ–Ю–†
 
-CONFIRM_ADD_PLAYLIST_TITLE=ѕќƒ“¬≈–ƒ»“≈
-CONFIRM_ADD_PLAYLIST=ƒќЅј¬»“№ ¬џЅ–јЌЌџ… ѕЋ≈…Ћ»—“ ¬ “≈ ”ў»…?
+CONFIRM_ADD_PLAYLIST_TITLE=–Я–Ю–Ф–Ґ–Т–Х–†–Ф–Ш–Ґ–Х
+CONFIRM_ADD_PLAYLIST=–Ф–Ю–С–Р–Т–Ш–Ґ–ђ –Т–Ђ–С–†–Р–Э–Э–Ђ–Щ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ –Т –Ґ–Х–Ъ–£–©–Ш–Щ?
 
-HELP_PLAYLIST_EDITOR_TITLE=–≈ƒј “ќ– ѕЋ≈…Ћ»—“ј (ѕќћќў№)
-HELP_PLAYLIST_EDITOR_01= ¬јƒ–ј“ - ƒЋя ѕ≈–≈ћ≈ў≈Ќ»я “–≈ ј ¬¬≈–’
-HELP_PLAYLIST_EDITOR_02=X - ƒЋя ѕ≈–≈ћ≈ў≈Ќ»я “–≈ ј ¬Ќ»«
-HELP_PLAYLIST_EDITOR_03=O - ƒЋя ”ƒјЋ≈Ќ»я “–≈ ј »« ѕЋ≈…Ћ»—“ј
-HELP_PLAYLIST_EDITOR_04=START - ƒЋя —ќ’–јЌ≈Ќ»я ѕЋ≈…Ћ»—“ј
-HELP_PLAYLIST_EDITOR_05=SELECT - ќ„»—“»“№ ѕЋ≈…Ћ»—“
-HELP_PLAYLIST_EDITOR_06=Ќќ“ј - ƒЋя ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я ѕЋ≈…Ћ»—“ј
+HELP_PLAYLIST_EDITOR_TITLE=–†–Х–Ф–Р–Ъ–Ґ–Ю–† –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р (–Я–Ю–Ь–Ю–©–ђ)
+HELP_PLAYLIST_EDITOR_01=–Ъ–Т–Р–Ф–†–Р–Ґ - –Ф–Ы–ѓ –Я–Х–†–Х–Ь–Х–©–Х–Э–Ш–ѓ –Ґ–†–Х–Ъ–Р –Т–Т–Х–†–•
+HELP_PLAYLIST_EDITOR_02=X - –Ф–Ы–ѓ –Я–Х–†–Х–Ь–Х–©–Х–Э–Ш–ѓ –Ґ–†–Х–Ъ–Р –Т–Э–Ш–Ч
+HELP_PLAYLIST_EDITOR_03=O - –Ф–Ы–ѓ –£–Ф–Р–Ы–Х–Э–Ш–ѓ –Ґ–†–Х–Ъ–Р –Ш–Ч –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
+HELP_PLAYLIST_EDITOR_04=–Ґ—А–µ—Г–≥–Њ–ї—М–љ–Є–Ї –і–ї—П –њ—А–Њ–≤–µ—А–Ї–Є —Д–∞–є–ї–Њ–≤
+HELP_PLAYLIST_EDITOR_05=START - –Ф–Ы–ѓ –°–Ю–•–†–Р–Э–Х–Э–Ш–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
+HELP_PLAYLIST_EDITOR_06=SELECT - –Ю–І–Ш–°–Ґ–Ш–Ґ–ђ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ
+HELP_PLAYLIST_EDITOR_07=–Э–Ю–Ґ–Р - –Ф–Ы–ѓ –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
 
-HELP_MEDIALIBRARY_TITLE=ћ≈ƒ»ј Ѕ»ЅЋ»ќ“≈ ј (ѕќћќў№)
-HELP_MEDIALIBRARY_01=X - ƒЋя ¬’ќƒј ¬ ƒ»–≈ “ќ–»ё / ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»≈ “–≈ ј
-HELP_MEDIALIBRARY_02=O - ƒЋя ѕ≈–≈ћ≈ў≈Ќ»я Ќј ”–ќ¬≈Ќ№ ¬џЎ≈
-HELP_MEDIALIBRARY_03= ¬јƒ–ј“ - ƒЋя ¬ќ—ѕ–ќ»«¬≈ƒ≈Ќ»я ¬џЅ–јЌЌќ√ќ
-HELP_MEDIALIBRARY_04=START - ƒЋя ƒќЅј¬Ћ≈Ќ»я ƒ»–≈ “ќ–»» / “–≈ ј ¬ ѕЋ≈…Ћ»—“
-HELP_MEDIALIBRARY_05=X + ¬¬≈–’/¬Ќ»« - ƒЋя ќ÷≈Ќ » “–≈ ј
+HELP_MEDIALIBRARY_TITLE=–Ь–Х–Ф–Ш–Р –С–Ш–С–Ы–Ш–Ю–Ґ–Х–Ъ–Р (–Я–Ю–Ь–Ю–©–ђ)
+HELP_MEDIALIBRARY_01=X - –Ф–Ы–ѓ –Т–•–Ю–Ф–Р –Т –Ф–Ш–†–Х–Ъ–Ґ–Ю–†–Ш–Ѓ / –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–Х –Ґ–†–Х–Ъ–Р
+HELP_MEDIALIBRARY_02=O - –Ф–Ы–ѓ –Я–Х–†–Х–Ь–Х–©–Х–Э–Ш–ѓ –Э–Р –£–†–Ю–Т–Х–Э–ђ –Т–Ђ–®–Х
+HELP_MEDIALIBRARY_03=–Ъ–Т–Р–Ф–†–Р–Ґ - –Ф–Ы–ѓ –Т–Ю–°–Я–†–Ю–Ш–Ч–Т–Х–Ф–Х–Э–Ш–ѓ –Т–Ђ–С–†–Р–Э–Э–Ю–У–Ю
+HELP_MEDIALIBRARY_04=START - –Ф–Ы–ѓ –Ф–Ю–С–Р–Т–Ы–Х–Э–Ш–ѓ –Ф–Ш–†–Х–Ъ–Ґ–Ю–†–Ш–Ш / –Ґ–†–Х–Ъ–Р –Т –Я–Ы–Х–Щ–Ы–Ш–°–Ґ
+HELP_MEDIALIBRARY_05=X + –Т–Т–Х–†–•/–Т–Э–Ш–Ч - –Ф–Ы–ѓ –Ю–¶–Х–Э–Ъ–Ш –Ґ–†–Х–Ъ–Р
 
-HELP_SETTINGS_TITLE=Ќј—“–ќ… » (ѕќћќў№)
-HELP_SETTINGS_01=¬Ћ≈¬ќ/¬ѕ–ј¬ќ - ƒЋя —ћ≈Ќџ Ќј—“–ќ… »
-HELP_SETTINGS_02=START - ƒЋя —ќ’–јЌ≈Ќ»я Ќј—“–ќ≈ 
+HELP_SETTINGS_TITLE=–Э–Р–°–Ґ–†–Ю–Щ–Ъ–Ш (–Я–Ю–Ь–Ю–©–ђ)
+HELP_SETTINGS_01=–Т–Ы–Х–Т–Ю/–Т–Я–†–Р–Т–Ю - –Ф–Ы–ѓ –°–Ь–Х–Э–Ђ –Э–Р–°–Ґ–†–Ю–Щ–Ъ–Ш
+HELP_SETTINGS_02=START - –Ф–Ы–ѓ –°–Ю–•–†–Р–Э–Х–Э–Ш–ѓ –Э–Р–°–Ґ–†–Ю–Х–Ъ
 
-#0=Japanese, 1=English, 2=French, 3=Spanish, 4=German, 5=Italian, 6=Dutch, 7=Portuguese, 8=Russian, 9=Korean, 10-11=Chinese
-OSK_LANGUAGE=8
+LOADING_SKIN_TITLE=–Я–Ю–Ц–Р–Ы–£–Щ–°–Ґ–Р –Я–Ю–Ф–Ю–Ц–Ф–Ш–Ґ–Х
+LOADING_SKIN=–Ч–Р–У–†–£–Ч–Ъ–Р –Э–Ю–Т–Ю–Щ –Ґ–Х–Ь–Ђ
+CHECKING_PLAYLIST=–Я–†–Ю–Т–Х–†–Ъ–Р –§–Р–Щ–Ы–Ю–Т –Я–Ы–Х–Щ–Ы–Ш–°–Ґ–Р
 
-LOADING_SKIN_TITLE=ѕќ∆јЋ”…—“ј ѕќƒќ∆ƒ»“≈
-LOADING_SKIN=«ј√–”« ј Ќќ¬ќ… “≈ћџ
-CHECKING_PLAYLIST=ѕ–ќ¬≈– ј ‘ј…Ћќ¬ ѕЋ≈…Ћ»—“ј
+SETTINGS_17=–Ш–Э–Ґ–Х–†–Т–Р–Ы –Я–Ю–Т–Ґ–Ю–†–Р –Ъ–Ы–Ѓ–І–Х–Щ
+SETTINGS_18=–Я–Ю–Ъ–Р–Ч–Ђ–Т–Р–Ґ–ђ –Ч–Р–°–Ґ–Р–Т–Ъ–£
 
-SETTINGS_17=»Ќ“≈–¬јЋ ѕќ¬“ќ–ј  Ћё„≈…
-SETTINGS_18=ѕќ ј«џ¬ј“№ «ј—“ј¬ ”
+BROWSE_TOP100=–Ґ–Ю–Я 100
+BROWSE_ALL=–Т–Ђ–С–†–Р–Ґ–ђ –Т–°–Х
 
-BROWSE_TOP100=“ќѕ 100
-BROWSE_ALL=¬џЅ–ј“№ ¬—≈
 ################################################################################
 #2.0.0 RC1
 ################################################################################
