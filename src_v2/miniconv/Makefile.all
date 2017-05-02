@@ -1,4 +1,4 @@
-TARGET = miniconv.both
+TARGET = miniconv
 OBJS = main.o miniconv.o
 
 BUILD_PRX=1
