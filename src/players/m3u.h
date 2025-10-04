@@ -17,18 +17,18 @@
 //    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //M3U header file
-#define MAX_SONGS 3000
+#define MAX_SONGS 5000
 
 struct M3U_songEntry{
 	char fileName[264];
 	int length;
-	char title[260];
+	char title[264];
 };
 
 struct M3U_playList{
 	char fileName[264];
 	int songCount;
-	struct M3U_songEntry songs[MAX_SONGS];
+	struct M3U_songEntry *songs[MAX_SONGS];
 	int modified;
 };
 
@@ -45,3 +45,4 @@ int M3U_isModified();
 int M3U_forceModified(int modified);
 int M3U_clear();
 struct M3U_playList *M3U_getPlaylist();
+int M3U_checkFiles();

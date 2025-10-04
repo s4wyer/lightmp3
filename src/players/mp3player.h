@@ -29,10 +29,10 @@ void MP3_FreeTune();
 int MP3_Load(char *filename);
 void MP3_GetTimeString(char *dest);
 int MP3_EndOfStream();
-struct fileInfo MP3_GetInfo();
+struct fileInfo *MP3_GetInfo();
 struct fileInfo MP3_GetTagInfoOnly(char *filename);
 int MP3_GetStatus();
-int MP3_GetPercentage();
+float MP3_GetPercentage();
 void MP3_setVolumeBoostType(char *boostType);
 void MP3_setVolumeBoost(int boost);
 int MP3_getVolumeBoost();
@@ -51,3 +51,6 @@ int MP3_isFilterSupported();
 //Manage suspend:
 int MP3_suspend();
 int MP3_resume();
+
+double MP3_getFilePosition();
+void MP3_setFilePosition(double position);

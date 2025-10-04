@@ -29,19 +29,22 @@
 #include <pspaudio.h>
 #include "player.h"
 #include "../system/opendir.h"
+#include "cooleyesBridge.h"
+#include "libasfparser/pspasfparser.h"
 
 //shared global vars
-char fileTypeDescription[4][20] = {"MP3", "OGG Vorbis", "ATRAC3+", "FLAC"};
+char audioCurrentDir[264];
+char fileTypeDescription[6][20] = {"MP3", "OGG Vorbis", "ATRAC3+", "FLAC", "AAC", "WMA"};
 int MUTED_VOLUME = 800;
 int MAX_VOLUME_BOOST=15;
 int MIN_VOLUME_BOOST=-15;
-int MIN_PLAYING_SPEED=0;
-int MAX_PLAYING_SPEED=9;
+int MIN_PLAYING_SPEED=-119;
+int MAX_PLAYING_SPEED=119;
 int currentVolume = 0;
+int CLOCK_WHEN_PAUSE = 0;
 
 //shared global vars for ME
-int HW_ModulesInit = 0;
-SceUID fd;
+static int HW_ModulesInit = 0;
 u16 data_align;
 u32 sample_per_frame;
 u16 channel_mode;
@@ -67,10 +70,10 @@ void (*pauseFunct)();
 void (*endFunct)();
 void (*setVolumeBoostTypeFunct)(char*);
 void (*setVolumeBoostFunct)(int);
-struct fileInfo (*getInfoFunct)();
+struct fileInfo *(*getInfoFunct)();
 struct fileInfo (*getTagInfoFunct)();
 void (*getTimeStringFunct)();
-int (*getPercentageFunct)();
+float (*getPercentageFunct)();
 int (*getPlayingSpeedFunct)();
 int (*setPlayingSpeedFunct)(int);
 int (*endOfStreamFunct)();
@@ -84,6 +87,9 @@ int (*isFilterSupportedFunct)();
 int (*suspendFunct)();
 int (*resumeFunct)();
 void (*fadeOutFunct)(float seconds);
+
+double (*getFilePositionFunct)();
+void (*setFilePositionFunct)(double positionInSecs);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Functions for ME
@@ -118,15 +124,28 @@ SceUID LoadStartAudioModule(char *modname, int partition){
 //Load and start needed modules:
 int initMEAudioModules(){
    if (!HW_ModulesInit){
-        if (sceKernelDevkitVersion() == 0x01050001)
-        {
-            LoadStartAudioModule("flash0:/kd/me_for_vsh.prx", PSP_MEMORY_PARTITION_KERNEL);
-            LoadStartAudioModule("flash0:/kd/audiocodec.prx", PSP_MEMORY_PARTITION_KERNEL);
-        }
-        else
-        {
-            sceUtilityLoadAvModule(PSP_AV_MODULE_AVCODEC);
-        }
+       if (sceKernelDevkitVersion() == 0x01050001){
+           LoadStartAudioModule("flash0:/kd/me_for_vsh.prx", PSP_MEMORY_PARTITION_KERNEL);
+           LoadStartAudioModule("flash0:/kd/audiocodec.prx", PSP_MEMORY_PARTITION_KERNEL);
+       }else{
+           sceUtilityLoadAvModule(PSP_AV_MODULE_AVCODEC);
+		   sceUtilityLoadAvModule(PSP_AV_MODULE_ATRAC3PLUS);
+           sceMpegInit();
+
+            int devkitVersion = sceKernelDevkitVersion();
+            SceUID modid = -1;
+
+            modid = pspSdkLoadStartModule("flash0:/kd/libasfparser.prx", PSP_MEMORY_PARTITION_USER);
+            if (modid < 0)
+                pspDebugScreenPrintf("Error loading libasfparser.prx\n");
+
+            modid = pspSdkLoadStartModule("cooleyesBridge.prx", PSP_MEMORY_PARTITION_KERNEL);
+            if (modid < 0)
+                pspDebugScreenPrintf("Error loading cooleyesBridge.prx\n");
+
+            cooleyesMeBootStart(devkitVersion, 3);
+	   }
+
        HW_ModulesInit = 1;
    }
    return 0;
@@ -264,13 +283,11 @@ int SeekNextFrameMP3(SceUID fd)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Set pointer to audio functions based on filename:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void setAudioFunctions(char *filename, int useME_MP3){
-	char ext[6];
-	if (strrchr(filename, '.'))
-		memcpy(ext, strrchr(filename, '.'), 6);
-	else
-		memcpy(ext, filename + strlen(filename) - 4, 5);
-	if (!stricmp(ext, ".ogg")){
+int setAudioFunctions(char *filename, int useME_MP3){
+	char ext[6] = "";
+	getExtension(filename, ext, 4);
+
+	if (!stricmp(ext, "OGG")){
         //OGG Vorbis
 		initFunct = OGG_Init;
 		loadFunct = OGG_Load;
@@ -297,61 +314,77 @@ void setAudioFunctions(char *filename, int useME_MP3){
         suspendFunct = OGG_suspend;
         resumeFunct = OGG_resume;
         fadeOutFunct = OGG_fadeOut;
-    } else if (!stricmp(ext, ".mp3") && useME_MP3){
-        //MP3 via Media Engine
-		initFunct = MP3ME_Init;
-		loadFunct = MP3ME_Load;
-		playFunct = MP3ME_Play;
-		pauseFunct = MP3ME_Pause;
-		endFunct = MP3ME_End;
-        setVolumeBoostTypeFunct = MP3ME_setVolumeBoostType;
-        setVolumeBoostFunct = MP3ME_setVolumeBoost;
-        getInfoFunct = MP3ME_GetInfo;
-        getTagInfoFunct = MP3ME_GetTagInfoOnly;
-        getTimeStringFunct = MP3ME_GetTimeString;
-        getPercentageFunct = MP3ME_GetPercentage;
-        getPlayingSpeedFunct = MP3ME_getPlayingSpeed;
-        setPlayingSpeedFunct = MP3ME_setPlayingSpeed;
-        endOfStreamFunct = MP3ME_EndOfStream;
 
-        setMuteFunct = MP3ME_setMute;
-        setFilterFunct = MP3ME_setFilter;
-        enableFilterFunct = MP3ME_enableFilter;
-        disableFilterFunct = MP3ME_disableFilter;
-        isFilterEnabledFunct = MP3ME_isFilterEnabled;
-        isFilterSupportedFunct = MP3ME_isFilterSupported;
+        getFilePositionFunct = OGG_getFilePosition;
+        setFilePositionFunct = OGG_setFilePosition;
+		return 0;
+    } else if (!stricmp(ext, "MP3")){
+		if (useME_MP3)
+		{
+			//MP3 via Media Engine
+			initFunct = MP3ME_Init;
+			loadFunct = MP3ME_Load;
+			playFunct = MP3ME_Play;
+			pauseFunct = MP3ME_Pause;
+			endFunct = MP3ME_End;
+			setVolumeBoostTypeFunct = MP3ME_setVolumeBoostType;
+			setVolumeBoostFunct = MP3ME_setVolumeBoost;
+			getInfoFunct = MP3ME_GetInfo;
+			getTagInfoFunct = MP3ME_GetTagInfoOnly;
+			getTimeStringFunct = MP3ME_GetTimeString;
+			getPercentageFunct = MP3ME_GetPercentage;
+			getPlayingSpeedFunct = MP3ME_getPlayingSpeed;
+			setPlayingSpeedFunct = MP3ME_setPlayingSpeed;
+			endOfStreamFunct = MP3ME_EndOfStream;
 
-        suspendFunct = MP3ME_suspend;
-        resumeFunct = MP3ME_resume;
-        fadeOutFunct = MP3ME_fadeOut;
-    } else if (!stricmp(ext, ".mp3")){
-        //MP3 via LibMad
-		initFunct = MP3_Init;
-		loadFunct = MP3_Load;
-		playFunct = MP3_Play;
-		pauseFunct = MP3_Pause;
-		endFunct = MP3_End;
-        setVolumeBoostTypeFunct = MP3_setVolumeBoostType;
-        setVolumeBoostFunct = MP3_setVolumeBoost;
-        getInfoFunct = MP3_GetInfo;
-        getTagInfoFunct = MP3_GetTagInfoOnly;
-        getTimeStringFunct = MP3_GetTimeString;
-        getPercentageFunct = MP3_GetPercentage;
-        getPlayingSpeedFunct = MP3_getPlayingSpeed;
-        setPlayingSpeedFunct = MP3_setPlayingSpeed;
-        endOfStreamFunct = MP3_EndOfStream;
+			setMuteFunct = MP3ME_setMute;
+			setFilterFunct = MP3ME_setFilter;
+			enableFilterFunct = MP3ME_enableFilter;
+			disableFilterFunct = MP3ME_disableFilter;
+			isFilterEnabledFunct = MP3ME_isFilterEnabled;
+			isFilterSupportedFunct = MP3ME_isFilterSupported;
 
-        setMuteFunct = MP3_setMute;
-        setFilterFunct = MP3_setFilter;
-        enableFilterFunct = MP3_enableFilter;
-        disableFilterFunct = MP3_disableFilter;
-        isFilterEnabledFunct = MP3_isFilterEnabled;
-        isFilterSupportedFunct = MP3_isFilterSupported;
+			suspendFunct = MP3ME_suspend;
+			resumeFunct = MP3ME_resume;
+			fadeOutFunct = MP3ME_fadeOut;
 
-        suspendFunct = MP3_suspend;
-        resumeFunct = MP3_resume;
-        fadeOutFunct = MP3_fadeOut;
-    } else if (!stricmp(ext, ".aa3") || !stricmp(ext, ".oma") || !stricmp(ext, ".omg")){
+            getFilePositionFunct = MP3ME_getFilePosition;
+            setFilePositionFunct = MP3ME_setFilePosition;
+		}
+		else
+		{
+			//MP3 via LibMad
+			initFunct = MP3_Init;
+			loadFunct = MP3_Load;
+			playFunct = MP3_Play;
+			pauseFunct = MP3_Pause;
+			endFunct = MP3_End;
+			setVolumeBoostTypeFunct = MP3_setVolumeBoostType;
+			setVolumeBoostFunct = MP3_setVolumeBoost;
+			getInfoFunct = MP3_GetInfo;
+			getTagInfoFunct = MP3_GetTagInfoOnly;
+			getTimeStringFunct = MP3_GetTimeString;
+			getPercentageFunct = MP3_GetPercentage;
+			getPlayingSpeedFunct = MP3_getPlayingSpeed;
+			setPlayingSpeedFunct = MP3_setPlayingSpeed;
+			endOfStreamFunct = MP3_EndOfStream;
+
+			setMuteFunct = MP3_setMute;
+			setFilterFunct = MP3_setFilter;
+			enableFilterFunct = MP3_enableFilter;
+			disableFilterFunct = MP3_disableFilter;
+			isFilterEnabledFunct = MP3_isFilterEnabled;
+			isFilterSupportedFunct = MP3_isFilterSupported;
+
+			suspendFunct = MP3_suspend;
+			resumeFunct = MP3_resume;
+			fadeOutFunct = MP3_fadeOut;
+
+            getFilePositionFunct = MP3_getFilePosition;
+            setFilePositionFunct = MP3_setFilePosition;
+		}
+		return 0;
+    } else if (!stricmp(ext, "AA3") || !stricmp(ext, "OMA") || !stricmp(ext, "OMG")){
         //AA3
 		initFunct = AA3ME_Init;
 		loadFunct = AA3ME_Load;
@@ -378,7 +411,11 @@ void setAudioFunctions(char *filename, int useME_MP3){
         suspendFunct = AA3ME_suspend;
         resumeFunct = AA3ME_resume;
         fadeOutFunct = AA3ME_fadeOut;
-    } else if (!stricmp(ext, ".flac")){
+
+        getFilePositionFunct = AA3ME_getFilePosition;
+        setFilePositionFunct = AA3ME_setFilePosition;
+		return 0;
+    } else if (!stricmp(ext, "FLAC") || !stricmp(ext, "FLA")){
         //FLAC
 		initFunct = FLAC_Init;
 		loadFunct = FLAC_Load;
@@ -405,7 +442,11 @@ void setAudioFunctions(char *filename, int useME_MP3){
         suspendFunct = FLAC_suspend;
         resumeFunct = FLAC_resume;
         fadeOutFunct = FLAC_fadeOut;
-    } else if (!stricmp(ext, ".aac")){
+
+        getFilePositionFunct = FLAC_getFilePosition;
+        setFilePositionFunct = FLAC_setFilePosition;
+		return 0;
+    } else if (!stricmp(ext, "AAC") || !stricmp(ext, "M4A")){
         //AAC e AAC+ software
 		initFunct = AAC_Init;
 		loadFunct = AAC_Load;
@@ -432,7 +473,43 @@ void setAudioFunctions(char *filename, int useME_MP3){
         suspendFunct = AAC_suspend;
         resumeFunct = AAC_resume;
         fadeOutFunct = AAC_fadeOut;
+
+        getFilePositionFunct = AAC_getFilePosition;
+        setFilePositionFunct = AAC_setFilePosition;
+		return 0;
+    } else if (!stricmp(ext, "WMA")){
+        //WMA
+		initFunct = WMA_Init;
+		loadFunct = WMA_Load;
+		playFunct = WMA_Play;
+		pauseFunct = WMA_Pause;
+		endFunct = WMA_End;
+        setVolumeBoostTypeFunct = WMA_setVolumeBoostType;
+        setVolumeBoostFunct = WMA_setVolumeBoost;
+        getInfoFunct = WMA_GetInfo;
+        getTagInfoFunct = WMA_GetTagInfoOnly;
+        getTimeStringFunct = WMA_GetTimeString;
+        getPercentageFunct = WMA_GetPercentage;
+        getPlayingSpeedFunct = WMA_getPlayingSpeed;
+        setPlayingSpeedFunct = WMA_setPlayingSpeed;
+        endOfStreamFunct = WMA_EndOfStream;
+
+        setMuteFunct = WMA_setMute;
+        setFilterFunct = WMA_setFilter;
+        enableFilterFunct = WMA_enableFilter;
+        disableFilterFunct = WMA_disableFilter;
+        isFilterEnabledFunct = WMA_isFilterEnabled;
+        isFilterSupportedFunct = WMA_isFilterSupported;
+
+        suspendFunct = WMA_suspend;
+        resumeFunct = WMA_resume;
+        fadeOutFunct = WMA_fadeOut;
+
+        getFilePositionFunct = WMA_getFilePosition;
+        setFilePositionFunct = WMA_setFilePosition;
+		return 0;
     }
+	return -1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -463,6 +540,9 @@ void unsetAudioFunctions(){
 
     suspendFunct = NULL;
     resumeFunct = NULL;
+
+    getFilePositionFunct = NULL;
+    setFilePositionFunct = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -479,25 +559,6 @@ short volume_boost(short *Sample, unsigned int *boost){
     	return intSample;
 }
 
-/*unsigned long volume_boost_long(unsigned long *Sample, unsigned int *boost){
-	long intSample = *Sample * (*boost + 1);
-	if (intSample > 2147483647)
-		return 2147483647;
-	else if (intSample < -2147483648)
-		return -2147483648;
-	else
-    	return intSample;
-}*/
-
-unsigned char volume_boost_char(unsigned char *Sample, unsigned int *boost){
-	int intSample = (int)*Sample * (*boost + 1);
-	if (intSample > 255)
-		return 255;
-	else if (intSample < 0)
-		return 0;
-	else
-    	return (unsigned char)intSample;
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Set volume:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -533,27 +594,24 @@ void fadeOut(int channel, float seconds){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Set frequency for output:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int sceAudio_38553111(int samplecount, int samplerate, int unk);
 int setAudioFrequency(unsigned short samples, unsigned short freq, char car){
-	return sceAudio_38553111(samples, freq, car);
+	return sceAudioSRCChReserve(samples, freq, car);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Release audio:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int sceAudioOutput2GetRestSample();
-int sceAudio_5C37C0AE(void);
 int releaseAudio(void){
-	while(sceAudioOutput2GetRestSample() > 0);
-	return sceAudio_5C37C0AE();
+	while(sceAudioOutput2GetRestSample() > 0)
+        sceKernelDelayThread(10);
+	return sceAudioSRCChRelease();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Audio output:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int sceAudio_E0727056(int volume, void *buffer);
 int audioOutput(int volume, void *buffer){
-	return sceAudio_E0727056(volume, buffer);
+	return sceAudioSRCOutputBlocking(volume, buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -617,15 +675,7 @@ void getCovertArtImageName(char *fileName, struct fileInfo *info){
     directoryUp(dirName);
 
     //Look for fileName.jpg in the same directory:
-    sprintf(buffer, "%s.jpg", fileName);
-    size = fileExists(buffer);
-    if (size > 0 && size <= MAX_IMAGE_DIMENSION){
-        strcpy(info->coverArtImageName, buffer);
-        return;
-    }
-
-    //Look for albumName.jpg in the same directory:
-    sprintf(buffer, "%s/%s.jpg", dirName, info->album);
+    snprintf(buffer, sizeof(buffer), "%s.jpg", fileName);
     size = fileExists(buffer);
     if (size > 0 && size <= MAX_IMAGE_DIMENSION){
         strcpy(info->coverArtImageName, buffer);
@@ -633,7 +683,7 @@ void getCovertArtImageName(char *fileName, struct fileInfo *info){
     }
 
     //Look for folder.jpg in the same directory:
-    sprintf(buffer, "%s/%s.jpg", dirName, "folder.jpg");
+    snprintf(buffer, sizeof(buffer), "%s/%s", dirName, "folder.jpg");
     size = fileExists(buffer);
     if (size > 0 && size <= MAX_IMAGE_DIMENSION){
         strcpy(info->coverArtImageName, buffer);
@@ -641,7 +691,15 @@ void getCovertArtImageName(char *fileName, struct fileInfo *info){
     }
 
     //Look for cover.jpg in same directory:
-    sprintf(buffer, "%s/%s", dirName, "cover.jpg");
+    snprintf(buffer, sizeof(buffer), "%s/%s", dirName, "cover.jpg");
+    size = fileExists(buffer);
+    if (size > 0 && size <= MAX_IMAGE_DIMENSION){
+        strcpy(info->coverArtImageName, buffer);
+        return;
+    }
+
+    //Look for albumName.jpg in the same directory:
+    snprintf(buffer, sizeof(buffer), "%s/%s.jpg", dirName, info->album);
     size = fileExists(buffer);
     if (size > 0 && size <= MAX_IMAGE_DIMENSION){
         strcpy(info->coverArtImageName, buffer);

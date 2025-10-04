@@ -27,10 +27,10 @@ void AAC_FreeTune();
 int AAC_Load(char *filename);
 void AAC_GetTimeString(char *dest);
 int AAC_EndOfStream();
-struct fileInfo AAC_GetInfo();
+struct fileInfo *AAC_GetInfo();
 struct fileInfo AAC_GetTagInfoOnly(char *filename);
 int AAC_GetStatus();
-int AAC_GetPercentage();
+float AAC_GetPercentage();
 void AAC_setVolumeBoostType(char *boostType);
 void AAC_setVolumeBoost(int boost);
 int AAC_getVolumeBoost();
@@ -45,6 +45,9 @@ void AAC_enableFilter();
 void AAC_disableFilter();
 int AAC_isFilterEnabled();
 int AAC_isFilterSupported();
+
+double AAC_getFilePosition();
+void AAC_setFilePosition(double position);
 
 //Manage suspend:
 int AAC_suspend();

@@ -24,8 +24,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <unistd.h>
 
 #include "id3.h"
+#include "mp3xing.h"
 #include "player.h"
 #include "mp3playerME.h"
 
@@ -35,22 +37,24 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Globals:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int MP3ME_threadActive = 0;
-int MP3ME_threadExited = 1;
-char MP3ME_fileName[264];
+static int MP3ME_threadActive = 0;
+static char MP3ME_fileName[264];
 static int MP3ME_isPlaying = 0;
-int MP3ME_thid = -1;
-int MP3ME_audio_channel = 0;
-int MP3ME_eof = 0;
-struct fileInfo MP3ME_info;
-int MP3ME_playingSpeed = 0; // 0 = normal
-unsigned int MP3ME_volume_boost = 0;
-float MP3ME_playingTime = 0;
-int MP3ME_volume = 0;
+static int MP3ME_thid = -1;
+static int MP3ME_audio_channel = 0;
+static int MP3ME_eof = 0;
+static struct fileInfo MP3ME_info;
+static int MP3ME_playingSpeed = 0; // 0 = normal
+static unsigned int MP3ME_volume_boost = 0;
+static float MP3ME_playingTime = 0;
+static int MP3ME_volume = 0;
 int MP3ME_defaultCPUClock = 20;
+static double MP3ME_filePos = 0;
+static double MP3ME_newFilePos = -1;
+static int MP3ME_tagRead = 0;
 
 //Globals for decoding:
-SceUID MP3ME_handle;
+static SceUID MP3ME_handle = -1;
 
 static int samplerates[4][3] =
 {
@@ -62,13 +66,16 @@ static int samplerates[4][3] =
 static int bitrates[] = {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 };
 static int bitrates_v2[] = {0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 };
 
-unsigned char MP3ME_input_buffer[2889]__attribute__((aligned(64)));//mp3 has the largest max frame, at3+ 352 is 2176
-unsigned long MP3ME_codec_buffer[65]__attribute__((aligned(64)));
-unsigned char MP3ME_output_buffer[2048*4]__attribute__((aligned(64)));//at3+ sample_per_frame*4
-short OutputBuffer[2][OUTPUT_BUFFER_SIZE];
-short *OutputPtrME = OutputBuffer[0];
+static unsigned char MP3ME_input_buffer[2889]__attribute__((aligned(64)));//mp3 has the largest max frame, at3+ 352 is 2176
+static unsigned long MP3ME_codec_buffer[65]__attribute__((aligned(64)));
+static unsigned char MP3ME_output_buffer[2048*4]__attribute__((aligned(64)));//at3+ sample_per_frame*4
+static short OutputBuffer[2][OUTPUT_BUFFER_SIZE];
+static short *OutputPtrME = OutputBuffer[0];
 
-int MP3ME_output_index = 0;
+static long MP3ME_suspendPosition = -1;
+static long MP3ME_suspendIsPlaying = 0;
+static double MP3ME_filesize = 0;
+static double MP3ME_tagsize = 0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Private functions:
@@ -88,10 +95,10 @@ int decodeThread(SceSize args, void *argp){
 
 	sceAudiocodecReleaseEDRAM(MP3ME_codec_buffer); //Fix: ReleaseEDRAM at the end is not enough to play another mp3.
 	MP3ME_threadActive = 1;
-    MP3ME_threadExited = 0;
     OutputBuffer_flip = 0;
     OutputPtrME = OutputBuffer[0];
 
+    sceIoChdir(audioCurrentDir);
     MP3ME_handle = sceIoOpen(MP3ME_fileName, PSP_O_RDONLY, 0777);
     if (MP3ME_handle < 0)
         MP3ME_threadActive = 0;
@@ -110,6 +117,8 @@ int decodeThread(SceSize args, void *argp){
     size -= data_start;
 
     memset(MP3ME_codec_buffer, 0, sizeof(MP3ME_codec_buffer));
+    memset(MP3ME_input_buffer, 0, sizeof(MP3ME_input_buffer));
+    memset(MP3ME_output_buffer, 0, sizeof(MP3ME_output_buffer));
 
     if ( sceAudiocodecCheckNeedMem(MP3ME_codec_buffer, 0x1002) < 0 )
         MP3ME_threadActive = 0;
@@ -128,6 +137,7 @@ int decodeThread(SceSize args, void *argp){
 	while (MP3ME_threadActive){
 		while( !MP3ME_eof && MP3ME_isPlaying )
 		{
+            MP3ME_filePos = sceIoLseek32(MP3ME_handle, 0, PSP_SEEK_CUR);
 			if ( sceIoRead( MP3ME_handle, MP3ME_header_buf, 4 ) != 4 ){
 				MP3ME_isPlaying = 0;
 				MP3ME_threadActive = 0;
@@ -169,6 +179,25 @@ int decodeThread(SceSize args, void *argp){
 			}
 
 			sceIoLseek32(MP3ME_handle, data_start, PSP_SEEK_SET); //seek back
+
+            if (MP3ME_newFilePos >= 0)
+            {
+                if (!MP3ME_newFilePos)
+                    MP3ME_newFilePos = ID3v2TagSize(MP3ME_fileName);
+
+                long old_start = data_start;
+                if (sceIoLseek32(MP3ME_handle, MP3ME_newFilePos, PSP_SEEK_SET) != old_start){
+                    data_start = SeekNextFrameMP3(MP3ME_handle);
+                    if(data_start < 0){
+                        MP3ME_eof = 1;
+                    }
+                    MP3ME_playingTime = (float)data_start / (float)frame_size /  (float)samplerate / 1000.0f;
+                    offset = data_start;
+                    size = total_size - data_start;
+                }
+                MP3ME_newFilePos = -1;
+                continue;
+            }
 
 			size -= frame_size;
 			if ( size <= 0)
@@ -245,7 +274,7 @@ int decodeThread(SceSize args, void *argp){
 		        //Check for playing speed:
                 if (MP3ME_playingSpeed){
                     long old_start = data_start;
-                    if (sceIoLseek32(MP3ME_handle, frame_size * 6 * MP3ME_playingSpeed, PSP_SEEK_CUR) != old_start){
+                    if (sceIoLseek32(MP3ME_handle, frame_size * MP3ME_playingSpeed, PSP_SEEK_CUR) != old_start){
                         data_start = SeekNextFrameMP3(MP3ME_handle);
                         if(data_start < 0){
                             MP3ME_eof = 1;
@@ -273,43 +302,51 @@ int decodeThread(SceSize args, void *argp){
       sceIoClose(MP3ME_handle);
       MP3ME_handle = -1;
     }
-    MP3ME_threadExited = 1;
+	sceKernelExitThread(0);
     return 0;
 }
+
 
 void getMP3METagInfo(char *filename, struct fileInfo *targetInfo){
     //ID3:
     struct ID3Tag ID3;
     strcpy(MP3ME_fileName, filename);
-    ID3 = ParseID3(filename);
+    ParseID3(filename, &ID3);
     strcpy(targetInfo->title, ID3.ID3Title);
     strcpy(targetInfo->artist, ID3.ID3Artist);
     strcpy(targetInfo->album, ID3.ID3Album);
     strcpy(targetInfo->year, ID3.ID3Year);
     strcpy(targetInfo->genre, ID3.ID3GenreText);
     strcpy(targetInfo->trackNumber, ID3.ID3TrackText);
-    targetInfo->length = ID3.ID3Length / 1000;
+    targetInfo->length = ID3.ID3Length;
     targetInfo->encapsulatedPictureType = ID3.ID3EncapsulatedPictureType;
     targetInfo->encapsulatedPictureOffset = ID3.ID3EncapsulatedPictureOffset;
     targetInfo->encapsulatedPictureLength = ID3.ID3EncapsulatedPictureLength;
+
+    MP3ME_info = *targetInfo;
+    MP3ME_tagRead = 1;
 }
 
 //Get info on file:
-//Uso LibMad per calcolare la durata del pezzo perché
-//altrimenti dovrei gestire il buffer anche nella seekNextFrame (senza è troppo lenta).
-//E' una porcheria ma è più semplice. :)
+//Uso LibMad per calcolare la durata del pezzo perchÃ©
+//altrimenti dovrei gestire il buffer anche nella seekNextFrame (senza Ã¨ troppo lenta).
+//E' una porcheria ma Ã¨ piÃ¹ semplice. :)
 int MP3MEgetInfo(){
 	unsigned long FrameCount = 0;
-    int fd;
-    int bufferSize = 1024*500;
+    int fd = -1;
+    int bufferSize = 1024*496;
     u8 *localBuffer;
     long singleDataRed = 0;
 	struct mad_stream stream;
 	struct mad_header header;
     int timeFromID3 = 0;
-    float mediumBitrate = 0;
+    float mediumBitrate = 0.0f;
+    int has_xing = 0;
+    struct xing xing;
+	memset(&xing, 0, sizeof(xing));
 
-    getMP3METagInfo(MP3ME_fileName, &MP3ME_info);
+    if (!MP3ME_tagRead)
+        getMP3METagInfo(MP3ME_fileName, &MP3ME_info);
 
 	mad_stream_init (&stream);
 	mad_header_init (&header);
@@ -321,19 +358,39 @@ int MP3MEgetInfo(){
 	long size = sceIoLseek(fd, 0, PSP_SEEK_END);
     sceIoLseek(fd, 0, PSP_SEEK_SET);
 
-	double startPos = ID3v2TagSize(MP3ME_fileName);
+    MP3ME_tagsize = ID3v2TagSize(MP3ME_fileName);
+	double startPos = MP3ME_tagsize;
 	sceIoLseek32(fd, startPos, PSP_SEEK_SET);
-    startPos = SeekNextFrameMP3(fd);
+
+    //Check for xing frame:
+	unsigned char *xing_buffer;
+	xing_buffer = (unsigned char *)malloc(XING_BUFFER_SIZE);
+	if (xing_buffer != NULL)
+	{
+        sceIoRead(fd, xing_buffer, XING_BUFFER_SIZE);
+        if(parse_xing(xing_buffer, 0, &xing))
+        {
+            if (xing.flags & XING_FRAMES && xing.frames){
+                has_xing = 1;
+                bufferSize = 50 * 1024;
+            }
+        }
+        free(xing_buffer);
+        xing_buffer = NULL;
+    }
+
     size -= startPos;
 
     if (size < bufferSize * 3)
         bufferSize = size;
-    localBuffer = (unsigned char *) malloc(bufferSize);
+    localBuffer = (unsigned char *) malloc(sizeof(unsigned char)  * bufferSize);
+    unsigned char *buff = localBuffer;
 
     MP3ME_info.fileType = MP3_TYPE;
     MP3ME_info.defaultCPUClock = MP3ME_defaultCPUClock;
     MP3ME_info.needsME = 1;
 	MP3ME_info.fileSize = size;
+	MP3ME_filesize = size;
     MP3ME_info.framesDecoded = 0;
 
     double totalBitrate = 0;
@@ -415,30 +472,41 @@ int MP3MEgetInfo(){
                     timeFromID3 = 1;
                     break;
                 }
+                if (has_xing)
+                    break;
             }
-    		//Controllo il cambio di sample rate (ma non dovrebbe succedere)
-    		if (header.samplerate > MP3ME_info.hz)
-      		   MP3ME_info.hz = header.samplerate;
 
             totalBitrate += header.bitrate;
-            if (size == bufferSize)
-                break;
-            else if (i==0)
-                sceIoLseek(fd, startPos + size/3, PSP_SEEK_SET);
-            else if (i==1)
-                sceIoLseek(fd, startPos + 2 * size/3, PSP_SEEK_SET);
 		}
+        if (size == bufferSize)
+            break;
+        else if (i==0)
+            sceIoLseek(fd, startPos + size/3, PSP_SEEK_SET);
+        else if (i==1)
+            sceIoLseek(fd, startPos + 2 * size/3, PSP_SEEK_SET);
+
+        if (timeFromID3 || has_xing)
+            break;
 	}
 	mad_header_finish (&header);
 	mad_stream_finish (&stream);
-    if (localBuffer)
-    	free(localBuffer);
+    if (buff){
+    	free(buff);
+        buff = NULL;
+    }
     sceIoClose(fd);
 
-    mediumBitrate = totalBitrate / (float)FrameCount;
     int secs = 0;
-    if (!MP3ME_info.length){
-        secs = size * 8 / mediumBitrate;
+    if (has_xing)
+    {
+        /* modify header.duration since we don't need it anymore */
+        mad_timer_multiply(&header.duration, xing.frames);
+        secs = mad_timer_count(header.duration, MAD_UNITS_SECONDS);
+		MP3ME_info.length = secs;
+	}
+    else if (!MP3ME_info.length){
+		mediumBitrate = totalBitrate / (float)FrameCount;
+		secs = size * 8 / mediumBitrate;
         MP3ME_info.length = secs;
     }else{
         secs = MP3ME_info.length;
@@ -463,16 +531,22 @@ void MP3ME_Init(int channel){
     MP3ME_playingTime = 0;
 	MP3ME_volume_boost = 0;
 	MP3ME_volume = PSP_AUDIO_VOLUME_MAX;
-    MIN_PLAYING_SPEED=-10;
-    MAX_PLAYING_SPEED=9;
-    //MIN_PLAYING_SPEED=0;
-    //MAX_PLAYING_SPEED=0;
+    MIN_PLAYING_SPEED=-119;
+    MAX_PLAYING_SPEED=119;
 	initMEAudioModules();
+    initFileInfo(&MP3ME_info);
+    MP3ME_tagRead = 0;
 }
 
 
 int MP3ME_Load(char *fileName){
-    initFileInfo(&MP3ME_info);
+    MP3ME_filePos = 0;
+    MP3ME_playingSpeed = 0;
+    MP3ME_isPlaying = 0;
+
+    getcwd(audioCurrentDir, 256);
+
+    //initFileInfo(&MP3ME_info);
     strcpy(MP3ME_fileName, fileName);
     if (MP3MEgetInfo() != 0){
         strcpy(MP3ME_fileName, "");
@@ -487,7 +561,7 @@ int MP3ME_Load(char *fileName){
 
     MP3ME_thid = -1;
     MP3ME_eof = 0;
-    MP3ME_thid = sceKernelCreateThread("decodeThread", decodeThread, THREAD_PRIORITY, 0x10000, PSP_THREAD_ATTR_USER, NULL);
+    MP3ME_thid = sceKernelCreateThread("decodeThread", decodeThread, THREAD_PRIORITY, DEFAULT_THREAD_STACK_SIZE, PSP_THREAD_ATTR_USER, NULL);
     if(MP3ME_thid < 0)
         return ERROR_CREATE_THREAD;
 
@@ -511,8 +585,7 @@ void MP3ME_Pause(){
 int MP3ME_Stop(){
     MP3ME_isPlaying = 0;
     MP3ME_threadActive = 0;
-    while (!MP3ME_threadExited)
-        sceKernelDelayThread(100000);
+	sceKernelWaitThreadEnd(MP3ME_thid, NULL);
     sceKernelDeleteThread(MP3ME_thid);
     return 0;
 }
@@ -526,16 +599,23 @@ void MP3ME_End(){
 }
 
 
-struct fileInfo MP3ME_GetInfo(){
-    return MP3ME_info;
+struct fileInfo *MP3ME_GetInfo(){
+    return &MP3ME_info;
 }
 
 
-int MP3ME_GetPercentage(){
-    int perc = (int)(MP3ME_playingTime/(double)MP3ME_info.length*100.0);
-    if (perc > 100)
-        perc = 100;
-    return perc;
+float MP3ME_GetPercentage(){
+	//Calcolo posizione in %:
+	float perc = 0.0f;
+
+    if (MP3ME_filesize > 0){
+        perc = ((float)MP3ME_filePos - (float)MP3ME_tagsize) / ((float)MP3ME_filesize - (float)MP3ME_tagsize) * 100.0;
+        if (perc > 100)
+            perc = 100;
+    }else{
+        perc = 0;
+    }
+    return(perc);
 }
 
 
@@ -615,10 +695,25 @@ void MP3ME_fadeOut(float seconds){
 //Manage suspend:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int MP3ME_suspend(){
+    MP3ME_suspendPosition = MP3ME_filePos;
+    MP3ME_suspendIsPlaying = MP3ME_isPlaying;
+
+	MP3ME_isPlaying = 0;
+    sceIoClose(MP3ME_handle);
+    MP3ME_handle = -1;
     return 0;
 }
 
 int MP3ME_resume(){
+	if (MP3ME_suspendPosition >= 0){
+		MP3ME_handle = sceIoOpen(MP3ME_fileName, PSP_O_RDONLY, 0777);
+		if (MP3ME_handle >= 0){
+			MP3ME_filePos = MP3ME_suspendPosition;
+			sceIoLseek32(MP3ME_handle, MP3ME_filePos, PSP_SEEK_SET);
+			MP3ME_isPlaying = MP3ME_suspendIsPlaying;
+		}
+	}
+	MP3ME_suspendPosition = -1;
     return 0;
 }
 
@@ -627,6 +722,16 @@ void MP3ME_setVolumeBoostType(char *boostType){
     MAX_VOLUME_BOOST = 4;
     //MAX_VOLUME_BOOST = 0;
     MIN_VOLUME_BOOST = 0;
+}
+
+double MP3ME_getFilePosition()
+{
+    return MP3ME_filePos;
+}
+
+void MP3ME_setFilePosition(double position)
+{
+    MP3ME_newFilePos = position;
 }
 
 //TODO:

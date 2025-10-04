@@ -21,18 +21,24 @@
 //    This code is based upon this sample code from ps2dev.org
 //    http://forums.ps2dev.org/viewtopic.php?t=8469
 //    and the source code of Music prx by joek2100
+#ifndef __player_h
+#define __player_h (1)
+
 #include <pspkernel.h>
 #include <pspsdk.h>
 #include <pspaudiocodec.h>
 #include <pspaudio.h>
+#include <pspmpeg.h>
 #include "pspaudiolib.h"
 
+#include "info.h"
 #include "mp3player.h"
 #include "mp3playerME.h"
 #include "aa3playerME.h"
 #include "oggplayer.h"
 #include "flacplayer.h"
 #include "aacplayer.h"
+#include "wmaplayerme.h"
 
 #define OPENING_OK 0
 #define ERROR_OPENING -1
@@ -44,13 +50,20 @@
 #define OGG_TYPE 1
 #define AT3_TYPE 2
 #define FLAC_TYPE 3
+#define AAC_TYPE 4
+#define WMA_TYPE 5
 #define UNK_TYPE -1
 
 #define FASTFORWARD_VOLUME 0x2200
-#define MAX_IMAGE_DIMENSION 150*1024
+#define MAX_IMAGE_DIMENSION 300*1024
+#define DEFAULT_THREAD_STACK_SIZE 256*1024
 
-extern char fileTypeDescription[4][20];
 
+extern int CLOCK_WHEN_PAUSE;
+
+extern char fileTypeDescription[6][20];
+
+extern char audioCurrentDir[264];
 extern int MUTED_VOLUME;
 extern int currentVolume;
 extern int MAX_VOLUME_BOOST;
@@ -59,7 +72,6 @@ extern int MIN_PLAYING_SPEED;
 extern int MAX_PLAYING_SPEED;
 
 //shared global vars for ME
-extern int HW_ModulesInit;
 extern SceUID fd;
 extern u16 data_align;
 extern u32 sample_per_frame;
@@ -85,34 +97,6 @@ int initMEAudioModules();
 int GetID3TagSize(char *fname);
 int SeekNextFrameMP3(SceUID fd);
 
-struct fileInfo{
-    int fileType;
-    int defaultCPUClock;
-    int needsME;
-	double fileSize;
-	char layer[12];
-	int kbit;
-	long instantBitrate;
-	long hz;
-	char mode[52];
-	char emphasis[20];
-	long length;
-	char strLength[12];
-	long frames;
-	long framesDecoded;
-	int  encapsulatedPictureType;
-	int  encapsulatedPictureOffset;
-	int  encapsulatedPictureLength;
-	char coverArtImageName[264];
-
-    //Tag/comments:
-	char album[260];
-	char title[260];
-	char artist[260];
-	char genre[260];
-    char year[8];
-    char trackNumber[8];
-};
 
 
 //Pointers for functions:
@@ -123,10 +107,10 @@ extern void (*pauseFunct)();
 extern void (*endFunct)();
 extern void (*setVolumeBoostTypeFunct)(char*);
 extern void (*setVolumeBoostFunct)(int);
-extern struct fileInfo (*getInfoFunct)();
+extern struct fileInfo *(*getInfoFunct)();
 extern struct fileInfo (*getTagInfoFunct)();
 extern void (*getTimeStringFunct)();
-extern int (*getPercentageFunct)();
+extern float (*getPercentageFunct)();
 extern int (*getPlayingSpeedFunct)();
 extern int (*setPlayingSpeedFunct)(int);
 extern int (*endOfStreamFunct)();
@@ -141,12 +125,13 @@ extern int (*suspendFunct)();
 extern int (*resumeFunct)();
 extern void (*fadeOutFunct)(float seconds);
 
-extern void setAudioFunctions(char *filename, int useME);
+extern double (*getFilePositionFunct)();                     //Gets current file position in bytes
+extern void (*setFilePositionFunct)(double position);          //Set current file position in butes
+
+extern int setAudioFunctions(char *filename, int useME);
 extern void unsetAudioFunctions();
 
 short volume_boost(short *Sample, unsigned int *boost);
-unsigned char volume_boost_char(unsigned char *Sample, unsigned int *boost);
-unsigned long volume_boost_long(unsigned long *Sample, unsigned int *boost);
 int setVolume(int channel, int volume);
 int setMute(int channel, int onOff);
 void fadeOut(int channel, float seconds);
@@ -158,3 +143,5 @@ int releaseAudio(void);
 int audioOutput(int volume, void *buffer);
 void initFileInfo(struct fileInfo *info);
 void getCovertArtImageName(char *fileName, struct fileInfo *info);
+
+#endif

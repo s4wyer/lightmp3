@@ -30,10 +30,10 @@ void AA3ME_FreeTune();
 int AA3ME_Load(char *filename);
 void AA3ME_GetTimeString(char *dest);
 int AA3ME_EndOfStream();
-struct fileInfo AA3ME_GetInfo();
+struct fileInfo *AA3ME_GetInfo();
 struct fileInfo AA3ME_GetTagInfoOnly(char *filename);
 int AA3ME_GetStatus();
-int AA3ME_GetPercentage();
+float AA3ME_GetPercentage();
 void AA3ME_setVolumeBoostType(char *boostType);
 void AA3ME_setVolumeBoost(int boost);
 int AA3ME_getVolumeBoost();
@@ -53,3 +53,5 @@ int AA3ME_isFilterSupported();
 int AA3ME_suspend();
 int AA3ME_resume();
 
+double AA3ME_getFilePosition();
+void AA3ME_setFilePosition(double position);

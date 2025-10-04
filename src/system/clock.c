@@ -23,6 +23,9 @@
 #include "clock.h"
 
 int getModelKernel();
+void setKernelBusClock(int bus);
+void setKernelCpuClock(int cpu);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Funzioni gestione BUS & CLOCK
@@ -36,11 +39,20 @@ int getBusClock(){
 }
 
 void setBusClock(int bus){
-    if (bus >= 54 && bus <= 111 && sceKernelDevkitVersion() < 0x03070110)
+    if (bus < getMinBUSClock())
+        bus = getMinBUSClock();
+
+    if (bus >= getMinBUSClock() && bus <= 111 && sceKernelDevkitVersion() < 0x03070110){
         scePowerSetBusClockFrequency(bus);
+		if (getBusClock() < bus)
+			scePowerSetBusClockFrequency(++bus);
+	}
 }
 
 void setCpuClock(int cpu){
+    if (cpu < getMinCPUClock())
+        cpu = getMinCPUClock();
+
     if (cpu >= getMinCPUClock() && cpu <= 266){
         if (sceKernelDevkitVersion() < 0x03070110){
             scePowerSetCpuClockFrequency(cpu);
@@ -60,12 +72,22 @@ void setCpuClock(int cpu){
 // Velocità minima di clock in base al modello (FAT/SLIM):
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int getMinCPUClock(){
-    if (getModel() == 1)
+    if (getModel() == PSP_MODEL_SLIM_AND_LITE || sceKernelDevkitVersion() >= 0x03070110)
         return 19;
     else
         return 10;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Velocità minima di bus in base al modello (FAT/SLIM):
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int getMinBUSClock(){
+    if (getModel() == PSP_MODEL_SLIM_AND_LITE || sceKernelDevkitVersion() >= 0x03070110)
+        return 95;
+    else
+        return 54;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Restituisce il modello (FAT = 0/SLIM = 1):
@@ -75,7 +97,38 @@ int getModel(){
         return kuKernelGetModel();
     else
         if (getModelKernel() == 1)
-            return 1;
+            return PSP_MODEL_SLIM_AND_LITE;
         else
             return 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Boost per particolari operazioni:
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define BOOST_CPU 222
+#define BOOST_BUS 111
+
+static int oldBus = 0;
+static int oldClock = 0;
+
+int cpuBoost(){
+    oldClock = getCpuClock();
+    oldBus = getBusClock();
+	if (BOOST_CPU <= 222){
+		setCpuClock(BOOST_CPU);
+		setBusClock(BOOST_BUS);
+	}else{
+		setKernelCpuClock(BOOST_CPU);
+		setKernelBusClock(BOOST_BUS);
+	}
+	return 0;
+}
+
+int cpuRestore(){
+    setBusClock(oldBus);
+	setCpuClock(oldClock);
+	oldClock = 0;
+    oldBus = 0;
+	return 0;
 }

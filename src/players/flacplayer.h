@@ -27,10 +27,10 @@ void FLAC_FreeTune();
 int FLAC_Load(char *filename);
 void FLAC_GetTimeString(char *dest);
 int FLAC_EndOfStream();
-struct fileInfo FLAC_GetInfo();
+struct fileInfo *FLAC_GetInfo();
 struct fileInfo FLAC_GetTagInfoOnly(char *filename);
 int FLAC_GetStatus();
-int FLAC_GetPercentage();
+float FLAC_GetPercentage();
 void FLAC_setVolumeBoostType(char *boostType);
 void FLAC_setVolumeBoost(int boost);
 int FLAC_getVolumeBoost();
@@ -50,3 +50,5 @@ int FLAC_isFilterSupported();
 int FLAC_suspend();
 int FLAC_resume();
 
+double FLAC_getFilePosition();
+void FLAC_setFilePosition(double position);

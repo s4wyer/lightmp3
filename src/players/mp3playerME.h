@@ -29,10 +29,10 @@ void MP3ME_FreeTune();
 int MP3ME_Load(char *filename);
 void MP3ME_GetTimeString(char *dest);
 int MP3ME_EndOfStream();
-struct fileInfo MP3ME_GetInfo();
+struct fileInfo *MP3ME_GetInfo();
 struct fileInfo MP3ME_GetTagInfoOnly(char *filename);
 int MP3ME_GetStatus();
-int MP3ME_GetPercentage();
+float MP3ME_GetPercentage();
 void MP3ME_setVolumeBoostType(char *boostType);
 void MP3ME_setVolumeBoost(int boost);
 int MP3ME_getVolumeBoost();
@@ -47,6 +47,9 @@ void MP3ME_enableFilter();
 void MP3ME_disableFilter();
 int MP3ME_isFilterEnabled();
 int MP3ME_isFilterSupported();
+
+double MP3ME_getFilePosition();
+void MP3ME_setFilePosition(double position);
 
 //Manage suspend:
 int MP3ME_suspend();

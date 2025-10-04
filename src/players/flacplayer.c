@@ -28,36 +28,38 @@
 #include <FLAC/metadata.h>
 #include "player.h"
 #include "flacplayer.h"
+#include "../system/opendir.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //Globals
 /////////////////////////////////////////////////////////////////////////////////////////
-int bufferThid = -1;
-int FLAC_audio_channel;
-char FLAC_fileName[264];
-FILE *FLAC_file = 0;
-int FLAC_eos = 0;
-struct fileInfo FLAC_info;
+static int bufferThid = -1;
+static int FLAC_audio_channel;
+static char FLAC_fileName[264];
+static FILE *FLAC_file = 0;
+static int FLAC_eos = 0;
+static struct fileInfo FLAC_info;
 static int isPlaying = 0;
-unsigned int FLAC_volume_boost = 0;
-int FLAC_playingSpeed = 0; // 0 = normal
-int FLAC_playingDelta = 0;
+static unsigned int FLAC_volume_boost = 0;
+static int FLAC_playingSpeed = 0; // 0 = normal
+static int FLAC_playingDelta = 0;
 static int outputInProgress = 0;
 static long suspendPosition = -1;
 static long suspendIsPlaying = 0;
 int FLAC_defaultCPUClock = 166;
 
-int kill_flac_thread;
-int bufferLow;
+static int kill_flac_thread;
+static int bufferLow;
 
 #define MIX_BUF_SIZE (PSP_NUM_AUDIO_SAMPLES * 2)
-short FLAC_mixBuffer[MIX_BUF_SIZE * 4]__attribute__ ((aligned(64)));
+static short FLAC_mixBuffer[MIX_BUF_SIZE * 4]__attribute__ ((aligned(64)));
 
-long FLAC_tempmixleft = 0;
-long samples_played = 0;
+static long FLAC_tempmixleft = 0;
+static long samples_played = 0;
+static long FLAC_total_samples = 0;
 
-FLAC__StreamDecoder *decoder = 0;
-
+static FLAC__StreamDecoder *decoder = 0;
+static double FLAC_newFilePos = -1;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //dummy functions for FLAC metadata iterators
@@ -123,7 +125,6 @@ void error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderError
 
 int flacThread(SceSize args, void *argp)
 {
-   FLAC__bool ok = true;
    FLAC__StreamDecoderInitStatus init_status;
 
    if((decoder = FLAC__stream_decoder_new()) == NULL)
@@ -142,11 +143,47 @@ int flacThread(SceSize args, void *argp)
    sceKernelSignalSema(bufferLow, 1); // so it fills the buffer to start
 
    kill_flac_thread = 0;
-   ok = FLAC__stream_decoder_process_until_end_of_stream(decoder);
-   //printf(" decoding: %s\n", ok ? "succeeded" : "FAILED");
-   //printf("    state: %s\n", FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(decoder)]);
+   while (FLAC__stream_decoder_process_single(decoder) != false){
+        if (FLAC_newFilePos >= 0)
+        {
+            if (!FLAC_newFilePos){
+                FLAC__uint64 sample = 0;
+                if (FLAC__stream_decoder_seek_absolute(decoder, sample)) {
+                    samples_played = 0;
+                    FLAC_tempmixleft = 0; // clear buffer of stale samples
+                }
+                if (FLAC__stream_decoder_get_state(decoder) == FLAC__STREAM_DECODER_SEEK_ERROR)
+                    FLAC__stream_decoder_flush(decoder);
+            }
+            FLAC_newFilePos = -1;
+        }
+
+        //Check for playing speed:
+        if (FLAC_playingSpeed){
+            FLAC__uint64 sample = (FLAC__uint64)(samples_played + PSP_NUM_AUDIO_SAMPLES + FLAC_playingDelta);
+            if (sample > FLAC_total_samples)
+                break;
+            if (sample < 0)
+                sample = 0;
+
+            if (!FLAC__stream_decoder_seek_absolute(decoder, sample)) {
+                FLAC_setPlayingSpeed(0);
+            } else {
+                samples_played = sample;
+                FLAC_tempmixleft = 0; // clear buffer of stale samples
+            }
+            if (FLAC__stream_decoder_get_state(decoder) == FLAC__STREAM_DECODER_SEEK_ERROR)
+                FLAC__stream_decoder_flush(decoder);
+        }
+
+        if (FLAC__stream_decoder_get_state(decoder) == FLAC__STREAM_DECODER_END_OF_STREAM )
+            break;
+   }
+
    FLAC_eos = 1;
 
+   if(FLAC__stream_decoder_get_state(decoder) != FLAC__STREAM_DECODER_UNINITIALIZED)
+		FLAC__stream_decoder_finish(decoder);
    FLAC__stream_decoder_delete(decoder);
 
    sceKernelExitDeleteThread(0);
@@ -196,17 +233,6 @@ static void audioCallback(void *_buf2, unsigned int numSamples, void *pdata){
 				FLAC_mixBuffer[j] = FLAC_mixBuffer[(numSamples<<1) + j];
 				FLAC_mixBuffer[j + 1] = FLAC_mixBuffer[(numSamples<<1) + j + 1];
 			}
-            //Check for playing speed:
-            if (FLAC_playingSpeed){
-            	FLAC__uint64 sample = (FLAC__uint64)(samples_played + FLAC_playingDelta);
-            	if (sample < 0 || !FLAC__stream_decoder_seek_absolute(decoder, sample)) {
-                    FLAC_setPlayingSpeed(0);
-                } else {
-                	samples_played += FLAC_playingDelta;
-                	//FLAC_tempmixleft = 0; // clear buffer of stale samples
-                }
-                FLAC__stream_decoder_flush(decoder);
-            }
 		}
 		samples_played += numSamples;
         outputInProgress = 0;
@@ -256,20 +282,20 @@ void getFLACTagInfo(char *filename, struct fileInfo *targetInfo){
 		if(info->type == FLAC__METADATA_TYPE_VORBIS_COMMENT) {
 			for(i = 0; i < info->data.vorbis_comment.num_comments; ++i) {
 				splitComment((char*)info->data.vorbis_comment.comments[i].entry, name, value);
-				if (!strcmp(name, "TITLE"))
+				if (!strcasecmp(name, "TITLE"))
 					strcpy(targetInfo->title, value);
-				else if(!strcmp(name, "ALBUM"))
+				else if(!strcasecmp(name, "ALBUM"))
 					strcpy(targetInfo->album, value);
-				else if(!strcmp(name, "ARTIST"))
+				else if(!strcasecmp(name, "ARTIST"))
 					strcpy(targetInfo->artist, value);
-				else if(!strcmp(name, "GENRE"))
+				else if(!strcasecmp(name, "GENRE"))
 					strcpy(targetInfo->genre, value);
-				else if(!strcmp(name, "DATE")){
+				else if(!strcasecmp(name, "DATE") || !strcasecmp(name, "YEAR")){
                     strncpy(targetInfo->year, value, 4);
                     targetInfo->year[4] = '\0';
-				}else if(!strcmp(name, "TRACKNUMBER"))
+				}else if(!strcasecmp(name, "TRACKNUMBER"))
 		            strcpy(targetInfo->trackNumber, value);
-        		else if(!strcmp(name, "COVERART_UUENCODED")){
+        		else if(!strcasecmp(name, "COVERART_UUENCODED")){
                     //COVER ART
                 }
 			}
@@ -277,7 +303,7 @@ void getFLACTagInfo(char *filename, struct fileInfo *targetInfo){
 		FLAC__metadata_object_delete(info);
 	}
     if (!strlen(targetInfo->title))
-        strcpy(targetInfo->title, FLAC_fileName);
+        getFileName(FLAC_fileName, targetInfo->title);
 }
 
 
@@ -291,6 +317,7 @@ void FLACgetInfo(char *filename){
 	    FLAC_info.instantBitrate = streaminfo.data.stream_info.sample_rate * streaminfo.data.stream_info.bits_per_sample * streaminfo.data.stream_info.channels;
 		FLAC_info.hz = streaminfo.data.stream_info.sample_rate;
 		FLAC_info.length = (long)(streaminfo.data.stream_info.total_samples / streaminfo.data.stream_info.sample_rate);
+        FLAC_total_samples = (long)streaminfo.data.stream_info.total_samples;
         FLAC_info.needsME = 0;
 	    if (streaminfo.data.stream_info.channels == 1)
 	        strcpy(FLAC_info.mode, "single channel");
@@ -314,10 +341,11 @@ void FLACgetInfo(char *filename){
 
 void FLAC_Init(int channel){
     initAudioLib();
-    MIN_PLAYING_SPEED=-10;
-    MAX_PLAYING_SPEED=9;
+    MIN_PLAYING_SPEED=-119;
+    MAX_PLAYING_SPEED=119;
 	FLAC_audio_channel = channel;
 	samples_played = 0;
+    FLAC_total_samples = 0;
     bufferLow = sceKernelCreateSema("bufferLow", 0, 1, 1, 0);
     memset(FLAC_mixBuffer, 0, sizeof(FLAC_mixBuffer));
     FLAC_tempmixleft = 0;
@@ -328,6 +356,7 @@ void FLAC_Init(int channel){
 int FLAC_Load(char *filename){
 	int file = -1;
 	samples_played = 0;
+	outputInProgress = 0;
 	isPlaying = 0;
 	FLAC_eos = 0;
     FLAC_playingSpeed = 0;
@@ -346,7 +375,7 @@ int FLAC_Load(char *filename){
 
 	//Start buffer filling thread:
     bufferThid = -1;
-	bufferThid = sceKernelCreateThread("bufferFilling", flacThread, 0x11, 0x10000, PSP_THREAD_ATTR_USER, NULL);
+	bufferThid = sceKernelCreateThread("bufferFilling", flacThread, 0x11, DEFAULT_THREAD_STACK_SIZE, PSP_THREAD_ATTR_USER, NULL);
 	if(bufferThid < 0)
 		return ERROR_CREATE_THREAD;
 	sceKernelStartThread(bufferThid, 0, NULL);
@@ -373,9 +402,6 @@ void FLAC_Pause(){
 
 int FLAC_Stop(){
 	isPlaying = 0;
-    while (outputInProgress == 1)
-        sceKernelDelayThread(100000);
-    sceKernelDeleteThread(bufferThid);
 	return 0;
 }
 
@@ -383,8 +409,14 @@ int FLAC_Stop(){
 void FLAC_FreeTune(){
 	kill_flac_thread = 1;
 	sceKernelSignalSema(bufferLow, 1);
+    while (outputInProgress == 1)
+        sceKernelDelayThread(100000);
+	//sceKernelWaitThreadEnd(bufferThid, NULL);
+    sceKernelDeleteThread(bufferThid);
+
 	sceKernelDelayThread(100*1000);
 	sceKernelDeleteSema(bufferLow);
+    //FLAC__stream_decoder_delete(decoder);
     if (FLAC_file)
         fclose(FLAC_file);
     memset(FLAC_mixBuffer, 0, sizeof(FLAC_mixBuffer));
@@ -410,8 +442,8 @@ int FLAC_EndOfStream(){
 }
 
 
-struct fileInfo FLAC_GetInfo(){
-	return FLAC_info;
+struct fileInfo *FLAC_GetInfo(){
+	return &FLAC_info;
 }
 
 
@@ -423,8 +455,11 @@ struct fileInfo FLAC_GetTagInfoOnly(char *filename){
 }
 
 
-int FLAC_GetPercentage(){
-	return (int)((float)(samples_played / FLAC_info.hz) / (float)FLAC_info.length * 100.0);
+float FLAC_GetPercentage(){
+    float perc = (float)(samples_played / FLAC_info.hz) / (float)FLAC_info.length * 100.0;
+    if (perc > 100)
+        perc = 100;
+	return perc;
 }
 
 
@@ -459,12 +494,12 @@ int FLAC_getVolumeBoost(){
 
 int FLAC_setPlayingSpeed(int playingSpeed){
 	if (playingSpeed >= MIN_PLAYING_SPEED && playingSpeed <= MAX_PLAYING_SPEED){
-		FLAC_playingSpeed = playingSpeed;
 		if (playingSpeed == 0)
 			setVolume(FLAC_audio_channel, 0x8000);
 		else
 			setVolume(FLAC_audio_channel, FASTFORWARD_VOLUME);
-        FLAC_playingDelta = PSP_NUM_AUDIO_SAMPLES * 2 * FLAC_playingSpeed;
+        FLAC_playingDelta = PSP_NUM_AUDIO_SAMPLES * playingSpeed;
+		FLAC_playingSpeed = playingSpeed;
 		return 0;
 	}else{
 		return -1;
@@ -518,6 +553,8 @@ int FLAC_resume(){
 	   FLAC__uint64 sample = (FLAC__uint64)suspendPosition;
        FLAC_Load(FLAC_fileName);
        if (FLAC__stream_decoder_seek_absolute(decoder, sample)){
+		  if (FLAC__stream_decoder_get_state(decoder) == FLAC__STREAM_DECODER_SEEK_ERROR)
+			  FLAC__stream_decoder_flush(decoder);
           samples_played = suspendPosition;
           if (suspendIsPlaying)
              FLAC_Play();
@@ -525,4 +562,16 @@ int FLAC_resume(){
        suspendPosition = -1;
     }
     return 0;
+}
+
+double FLAC_getFilePosition()
+{
+    FLAC__uint64 pos = 0;
+    FLAC__stream_decoder_get_decode_position(decoder, &pos);
+    return (double)pos;
+}
+
+void FLAC_setFilePosition(double position)
+{
+    FLAC_newFilePos = position;
 }

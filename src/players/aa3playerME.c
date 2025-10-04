@@ -22,33 +22,40 @@
 //    and the source code of Music prx by joek2100
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "player.h"
 #include "id3.h"
 #include "aa3playerME.h"
+#include "../system/opendir.h"
+
 #define AT3_THREAD_PRIORITY 12
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Globals:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int AA3ME_threadActive = 0;
-int AA3ME_threadExited = 1;
-char AA3ME_fileName[264];
+SceUID AA3ME_handle;
+static int AA3ME_threadActive = 0;
+//static int AA3ME_threadExited = 1;
+static char AA3ME_fileName[264];
 static int AA3ME_isPlaying = 0;
-int AA3ME_thid = -1;
-int AA3ME_audio_channel = 0;
-int AA3ME_eof = 0;
-struct fileInfo AA3ME_info;
-float AA3ME_playingTime = 0;
-int AA3ME_volume = 0;
-int AA3ME_playingSpeed = 0; // 0 = normal
+static int AA3ME_thid = -1;
+static int AA3ME_audio_channel = 0;
+static int AA3ME_eof = 0;
+static struct fileInfo AA3ME_info;
+static float AA3ME_playingTime = 0.0f;
+static int AA3ME_volume = 0;
+static int AA3ME_playingSpeed = 0; // 0 = normal
 int AA3ME_defaultCPUClock = 20;
-unsigned int AA3ME_volume_boost = 0;
-long AA3ME_suspendPosition = -1;
-long AA3ME_suspendIsPlaying = 0;
+static unsigned int AA3ME_volume_boost = 0;
+static long AA3ME_suspendPosition = -1;
+static long AA3ME_suspendIsPlaying = 0;
+static double AA3ME_filePos = 0;
+static double AA3ME_newFilePos = -1;
+static int AA3ME_tagRead = 0;
 
-unsigned char AA3ME_input_buffer[2889]__attribute__((aligned(64)));//mp3 has the largest max frame, at3+ 352 is 2176
-unsigned long AA3ME_codec_buffer[65]__attribute__((aligned(64)));
-short AA3ME_output_buffer[2048*2]__attribute__((aligned(64)));//at3+ sample_per_frame*4
+static unsigned char AA3ME_input_buffer[2889]__attribute__((aligned(64)));//mp3 has the largest max frame, at3+ 352 is 2176
+static unsigned long AA3ME_codec_buffer[65]__attribute__((aligned(64)));
+static short AA3ME_output_buffer[2048*2]__attribute__((aligned(64)));//at3+ sample_per_frame*4
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Private functions:
@@ -63,21 +70,22 @@ int AA3ME_decodeThread(SceSize args, void *argp){
     int tag_size;
 	int offset = 0;
 
-	AA3ME_threadExited = 0;
+	//AA3ME_threadExited = 0;
     AA3ME_threadActive = 1;
 
 	sceAudiocodecReleaseEDRAM(AA3ME_codec_buffer); //Fix: ReleaseEDRAM at the end is not enough to play another file.
     OutputBuffer_flip = 0;
     AT3_OutputPtr = AT3_OutputBuffer[0];
 
+    sceIoChdir(audioCurrentDir);
     tag_size = GetID3TagSize(AA3ME_fileName);
-    fd = sceIoOpen(AA3ME_fileName, PSP_O_RDONLY, 0777);
-    if (fd < 0)
+    AA3ME_handle = sceIoOpen(AA3ME_fileName, PSP_O_RDONLY, 0777);
+    if (AA3ME_handle < 0)
         AA3ME_threadActive = 0;
 
-    sceIoLseek32(fd, tag_size, PSP_SEEK_SET);//not all omg files have a fixed header
+    sceIoLseek32(AA3ME_handle, tag_size, PSP_SEEK_SET);//not all omg files have a fixed header
 
-    if ( sceIoRead( fd, ea3_header, 0x60 ) != 0x60 )
+    if ( sceIoRead( AA3ME_handle, ea3_header, 0x60 ) != 0x60 )
         AA3ME_threadActive = 0;
 
     if ( ea3_header[0] != 0x45 || ea3_header[1] != 0x41 || ea3_header[2] != 0x33 )
@@ -97,9 +105,9 @@ int AA3ME_decodeThread(SceSize args, void *argp){
         data_align = (ea3_header[0x23]+1)*8;
 
     data_start = tag_size+0x60;
-    data_size = sceIoLseek32(fd, 0, PSP_SEEK_END) - data_start;
+    data_size = sceIoLseek32(AA3ME_handle, 0, PSP_SEEK_END) - data_start;
 
-    sceIoLseek32(fd, data_start, PSP_SEEK_SET);
+    sceIoLseek32(AA3ME_handle, data_start, PSP_SEEK_SET);
 
     memset(AA3ME_codec_buffer, 0, sizeof(AA3ME_codec_buffer));
 
@@ -159,7 +167,17 @@ int AA3ME_decodeThread(SceSize args, void *argp){
 	while (AA3ME_threadActive){
 		while( !AA3ME_eof && AA3ME_isPlaying )
 		{
-			data_start = sceIoLseek32(fd, 0, PSP_SEEK_CUR);
+            if (AA3ME_newFilePos >= 0)
+            {
+                if (!AA3ME_newFilePos)
+                    AA3ME_newFilePos = tag_size + 0x60;
+                sceIoLseek32(AA3ME_handle, AA3ME_newFilePos, PSP_SEEK_SET);
+                AA3ME_playingTime = (float)(AA3ME_newFilePos) / (float)data_align * (float)sample_per_frame/(float)samplerate;
+                AA3ME_newFilePos = -1;
+            }
+
+			data_start = sceIoLseek32(AA3ME_handle, 0, PSP_SEEK_CUR);
+            AA3ME_filePos = data_start;
 
 			if (data_start < 0){
 				AA3ME_isPlaying = 0;
@@ -170,7 +188,7 @@ int AA3ME_decodeThread(SceSize args, void *argp){
 			if ( at3_type == TYPE_ATRAC3 ) {
 				memset( AA3ME_input_buffer, 0, 0x180);
 
-				res = sceIoRead( fd, AA3ME_input_buffer, data_align );
+				res = sceIoRead( AA3ME_handle, AA3ME_input_buffer, data_align );
 
 				if (res < 0){//error reading suspend/usb problem
 					AA3ME_isPlaying = 0;
@@ -195,7 +213,7 @@ int AA3ME_decodeThread(SceSize args, void *argp){
 				AA3ME_input_buffer[2] = at3_at3plus_flagdata[0];
 				AA3ME_input_buffer[3] = at3_at3plus_flagdata[1];
 
-				res = sceIoRead( fd, AA3ME_input_buffer+8, data_align );
+				res = sceIoRead( AA3ME_handle, AA3ME_input_buffer+8, data_align );
 
 				if (res < 0){//error reading suspend/usb problem
 					AA3ME_isPlaying = 0;
@@ -249,16 +267,17 @@ int AA3ME_decodeThread(SceSize args, void *argp){
 				AT3_OutputPtr = AT3_OutputBuffer[OutputBuffer_flip];
 		        //Check for playing speed:
                 if (AA3ME_playingSpeed){
-                    sceIoLseek32(fd, sceIoLseek32(fd, 0, PSP_SEEK_CUR) + data_align * 3 * AA3ME_playingSpeed, PSP_SEEK_SET);
-                    AA3ME_playingTime += (float)(data_align * 3 * AA3ME_playingSpeed) / (float)data_align * (float)sample_per_frame/(float)samplerate;
+                    sceIoLseek32(AA3ME_handle, sceIoLseek32(AA3ME_handle, 0, PSP_SEEK_CUR) + data_align * AA3ME_playingSpeed, PSP_SEEK_SET);
+                    AA3ME_playingTime += (float)(data_align * AA3ME_playingSpeed) / (float)data_align * (float)sample_per_frame/(float)samplerate;
                 }
 			}
 		}
 		sceKernelDelayThread(10000);
 	}
-	sceIoClose(fd);
-    fd = -1;
-    AA3ME_threadExited = 1;
+	sceIoClose(AA3ME_handle);
+    AA3ME_handle = -1;
+    //AA3ME_threadExited = 1;
+	sceKernelExitThread(0);
     return 0;
 }
 
@@ -266,7 +285,7 @@ int AA3ME_decodeThread(SceSize args, void *argp){
 //Get tag info:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void getAA3METagInfo(char *filename, struct fileInfo *targetInfo){
-    FILE *fp = NULL;
+    int fp = 0;
 
     int size;
     int tag_length;
@@ -275,20 +294,20 @@ void getAA3METagInfo(char *filename, struct fileInfo *targetInfo){
     strcpy(AA3ME_fileName, filename);
     size = GetID3TagSize(filename);
 
-    fp = fopen(filename, "rb");
-    if (fp == NULL) return;
-    fseek(fp, 10, SEEK_SET);
+	fp = sceIoOpen(filename, PSP_O_RDONLY, 0777);
+    if (fp < 0) return;
+	sceIoLseek(fp, 10, PSP_SEEK_SET);
 
     while (size != 0) {
-        fread(tag, sizeof(char), 4, fp);
+		sceIoRead(fp, tag, 4);
         size -= 4;
 
         /* read 4 byte big endian tag length */
-        fread(&tag_length, sizeof(unsigned int), 1, fp);
+		sceIoRead(fp, &tag_length, sizeof(unsigned int));
         tag_length = (unsigned int) swapInt32BigToHost((int)tag_length);
         size -= 4;
 
-        fseek(fp, 2, SEEK_CUR);
+		sceIoLseek(fp, 2, PSP_SEEK_CUR);
         size -= 2;
 
         /* Perform checks for end of tags and tag length overflow or zero */
@@ -296,37 +315,37 @@ void getAA3METagInfo(char *filename, struct fileInfo *targetInfo){
 
         if(!strncmp("TPE1",tag,4)) /* Artist */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->artist);
+			sceIoLseek(fp, 1, PSP_SEEK_CUR);
+            readTagData(fp, tag_length - 1, 260, targetInfo->artist);
         }
         else if(!strncmp("TIT2",tag,4)) /* Title */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->title);
+			sceIoLseek(fp, 1, PSP_SEEK_CUR);
+			readTagData(fp, tag_length - 1, 260, targetInfo->title);
         }
         else if(!strncmp("TALB",tag,4)) /* Album */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->album);
+            sceIoLseek(fp, 1, PSP_SEEK_CUR);
+            readTagData(fp, tag_length - 1, 260, targetInfo->album);
         }
         else if(!strncmp("TRCK",tag,4)) /* Track No. */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->trackNumber);
+            sceIoLseek(fp, 1, PSP_SEEK_CUR);
+            readTagData(fp, tag_length - 1, 8, targetInfo->trackNumber);
         }
         else if(!strncmp("TYER",tag,4)) /* Year */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->year);
+            sceIoLseek(fp, 1, PSP_SEEK_CUR);
+            readTagData(fp, tag_length - 1, 12, targetInfo->year);
         }
         else if(!strncmp("TCON",tag,4)) /* Genre */
         {
-            fseek(fp, 1, SEEK_CUR);
-            readTagData(fp, tag_length - 1, targetInfo->genre);
+            sceIoLseek(fp, 1, PSP_SEEK_CUR);
+            readTagData(fp, tag_length - 1, 260, targetInfo->genre);
         }
         else if(!strncmp("APIC",tag,4)) /* Picture */
         {
-            /*fseek(fp, 1, SEEK_CUR);
+            /*sceIoLseek(fp, 1, PSP_SEEK_CUR);
             fseek(fp, 13, SEEK_CUR);
             targetInfo->encapsulatedPictureOffset = ftell(fp);
             targetInfo->encapsulatedPictureLength = tag_length-14;
@@ -334,13 +353,16 @@ void getAA3METagInfo(char *filename, struct fileInfo *targetInfo){
         }
         else
         {
-            fseek(fp, tag_length, SEEK_CUR);
+			sceIoLseek(fp, tag_length, PSP_SEEK_CUR);
         }
         size -= tag_length;
 	}
     if (!strlen(targetInfo->title))
-        strcpy(targetInfo->title, AA3ME_fileName);
-	fclose(fp);
+        getFileName(AA3ME_fileName, targetInfo->title);
+	sceIoClose(fp);
+
+    AA3ME_info = *targetInfo;
+    AA3ME_tagRead = 1;
 }
 
 struct fileInfo AA3ME_GetTagInfoOnly(char *filename){
@@ -359,9 +381,10 @@ int AA3MEgetInfo(){
 
     u8 ea3_header[0x60];
     int tag_size;
-    float totalPlayingTime = 0;
+    float totalPlayingTime = 0.0f;
 
     tag_size = GetID3TagSize(AA3ME_fileName);
+	SceUID fd;
     fd = sceIoOpen(AA3ME_fileName, PSP_O_RDONLY, 0777);
     if (fd < 0)
         return -1;
@@ -407,7 +430,9 @@ int AA3MEgetInfo(){
         AA3ME_info.kbit = 105;
     else if ( data_align == 0x180 )
         AA3ME_info.kbit = 132;
-    else
+    else if ( data_align == 0x2E8 )
+        AA3ME_info.kbit = 128;
+	else
         AA3ME_info.kbit = data_align; //Unknown bitrate!
     AA3ME_info.instantBitrate = AA3ME_info.kbit * 1000;
 
@@ -436,7 +461,8 @@ int AA3MEgetInfo(){
 	sceIoClose(fd);
     fd = -1;
 
-    getAA3METagInfo(AA3ME_fileName, &AA3ME_info);
+    if (!AA3ME_tagRead)
+        getAA3METagInfo(AA3ME_fileName, &AA3ME_info);
     return 0;
 }
 
@@ -447,16 +473,22 @@ void AA3ME_Init(int channel){
     AA3ME_audio_channel = channel;
     AA3ME_playingTime = 0;
     AA3ME_volume = PSP_AUDIO_VOLUME_MAX;
-    MIN_PLAYING_SPEED=-10;
-    MAX_PLAYING_SPEED=9;
+    MIN_PLAYING_SPEED=-119;
+    MAX_PLAYING_SPEED=119;
+
+    initFileInfo(&AA3ME_info);
+    AA3ME_tagRead = 0;
+
 	initMEAudioModules();
 }
 
 
 int AA3ME_Load(char *fileName){
+    AA3ME_filePos = 0;
     AA3ME_playingSpeed = 0;
     AA3ME_isPlaying = 0;
-    initFileInfo(&AA3ME_info);
+
+    getcwd(audioCurrentDir, 256);
     strcpy(AA3ME_fileName, fileName);
     if (AA3MEgetInfo() != 0){
         return ERROR_OPENING;
@@ -464,13 +496,13 @@ int AA3ME_Load(char *fileName){
 
     releaseAudio();
     if (setAudioFrequency(AT3_OUTPUT_BUFFER_SIZE/2, AA3ME_info.hz, 2) < 0){
-        MP3ME_End();
+        AA3ME_End();
         return ERROR_INVALID_SAMPLE_RATE;
     }
 
     AA3ME_thid = -1;
     AA3ME_eof = 0;
-    AA3ME_thid = sceKernelCreateThread("AA3ME_decodeThread", AA3ME_decodeThread, AT3_THREAD_PRIORITY, 0x10000, PSP_THREAD_ATTR_USER, NULL);
+    AA3ME_thid = sceKernelCreateThread("AA3ME_decodeThread", AA3ME_decodeThread, AT3_THREAD_PRIORITY, DEFAULT_THREAD_STACK_SIZE, PSP_THREAD_ATTR_USER, NULL);
     if(AA3ME_thid < 0)
         return ERROR_CREATE_THREAD;
 
@@ -494,8 +526,9 @@ void AA3ME_Pause(){
 int AA3ME_Stop(){
     AA3ME_isPlaying = 0;
     AA3ME_threadActive = 0;
-    while (!AA3ME_threadExited)
-        sceKernelDelayThread(100000);
+    /*while (!AA3ME_threadExited)
+        sceKernelDelayThread(100000);*/
+	sceKernelWaitThreadEnd(AA3ME_thid, NULL);
     sceKernelDeleteThread(AA3ME_thid);
     return 0;
 }
@@ -509,13 +542,16 @@ void AA3ME_End(){
 }
 
 
-struct fileInfo AA3ME_GetInfo(){
-    return AA3ME_info;
+struct fileInfo *AA3ME_GetInfo(){
+    return &AA3ME_info;
 }
 
 
-int AA3ME_GetPercentage(){
-    return (int)(AA3ME_playingTime/(double)AA3ME_info.length*100.0);
+float AA3ME_GetPercentage(){
+    float perc = (float)(AA3ME_playingTime/(double)AA3ME_info.length*100.0);
+    if (perc > 100)
+        perc = 100;
+	return perc;
 }
 
 
@@ -527,19 +563,26 @@ int AA3ME_isFilterSupported(){
 //Manage suspend:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int AA3ME_suspend(){
-    AA3ME_suspendPosition = sceIoLseek32(fd, 0, PSP_SEEK_CUR);
+    AA3ME_suspendPosition = AA3ME_filePos;
     AA3ME_suspendIsPlaying = AA3ME_isPlaying;
-    AA3ME_Stop();
+
+	AA3ME_isPlaying = 0;
+    sceIoClose(AA3ME_handle);
+    AA3ME_handle = -1;
+
     return 0;
 }
 
 int AA3ME_resume(){
-    AA3ME_Load(AA3ME_fileName);
-    sceKernelDelayThread(20000);
-    if (AA3ME_suspendPosition >= 0)
-        sceIoLseek32(fd, AA3ME_suspendPosition, PSP_SEEK_SET);
-    AA3ME_isPlaying = AA3ME_suspendIsPlaying;
-    AA3ME_suspendPosition = -1;
+	if (AA3ME_suspendPosition >= 0){
+		AA3ME_handle = sceIoOpen(AA3ME_fileName, PSP_O_RDONLY, 0777);
+		if (AA3ME_handle >= 0){
+			AA3ME_filePos = AA3ME_suspendPosition;
+			sceIoLseek32(AA3ME_handle, AA3ME_filePos, PSP_SEEK_SET);
+			AA3ME_isPlaying = AA3ME_suspendIsPlaying;
+		}
+	}
+	AA3ME_suspendPosition = -1;
     return 0;
 }
 
@@ -602,6 +645,16 @@ void AA3ME_setVolumeBoost(int boost){
 
 int AA3ME_getVolumeBoost(){
     return AA3ME_volume_boost;
+}
+
+double AA3ME_getFilePosition()
+{
+    return AA3ME_filePos;
+}
+
+void AA3ME_setFilePosition(double position)
+{
+    AA3ME_newFilePos = position;
 }
 
 //TODO:
